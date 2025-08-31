@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GP Management Portal</title>
+  <style>
+    body { margin: 0; font-family: Arial, sans-serif; background: var(--bg, #f4f6f9); }
+
+    /* Default Theme Variables */
+    :root {
+      --navbar-bg: #1d3557;
+      --sidebar-bg: #2c3e50;
+      --sidebar-hover: #34495e;
+      --text-color: #fff;
+      --card-bg: #fff;
+      --card-text: #333;
+    }
+
+    /* Navbar */
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--navbar-bg);
+      color: var(--text-color);
+      padding: 10px 20px;
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      position: fixed;
+      top: 50px;
+      left: 0;
+      width: 220px;
+      height: calc(100% - 50px);
+      background: var(--sidebar-bg);
+      color: var(--text-color);
+      padding-top: 15px;
+    }
+
+    .sidebar a {
+      display: block;
+      padding: 12px 20px;
+      color: #ecf0f1;
+      text-decoration: none;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .sidebar a:hover { background: var(--sidebar-hover); }
+
+    /* Content Area */
+    .content {
+      margin-left: 220px;
+      padding: 0;
+      height: calc(100vh - 50px);
+    }
+
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: var(--card-bg);
+    }
+
+    /* Theme dropdown */
+    .dropdown {
+      position: relative;
+      display: inline-block;
+      cursor: pointer;
+    }
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      right: 0;
+      background: #fff;
+      min-width: 180px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      z-index: 1000;
+      padding: 8px;
+      border-radius: 6px;
+    }
+    .dropdown:hover .dropdown-content {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .theme-option {
+      width: 40px;
+      height: 40px;
+      border-radius: 4px;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: transform 0.2s, border 0.2s;
+    }
+    .theme-option:hover {
+      transform: scale(1.1);
+      border: 2px solid #000;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navbar -->
+  <div class="navbar">
+    <div class="logo">Bhagabanur Gram Panchayat</div>
+    <div class="nav-links">
+      <div class="dropdown">
+        <span>Themes ▾</span>
+        <div class="dropdown-content">
+          <div class="theme-option" style="background:#1d3557;" onclick="setTheme('default')" title="Default Blue"></div>
+          <div class="theme-option" style="background:#2d6a4f;" onclick="setTheme('green')" title="Green"></div>
+          <div class="theme-option" style="background:#111;" onclick="setTheme('dark')" title="Dark"></div>
+          <div class="theme-option" style="background:#444;" onclick="setTheme('grey')" title="Dark Grey"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <a onclick="loadPage('home')">🏠 Home</a>
+    <a onclick="loadPage('tender')">📑 Tender Management</a>
+    <a onclick="loadPage('plan')">🗂 Action Plan Entry</a>
+    <a onclick="loadPage('nit')">📝 Prepare NIT</a>
+    <a onclick="loadPage('sale')">💰 Sale of Tender Form</a>
+    <a onclick="loadPage('acceptance')">✔ Acceptance & EMD Return</a>
+    <a onclick="loadPage('workorder')">📜 Issue Work Order</a>
+    <a onclick="loadPage('bill')">📊 Bill Payment & Deduction</a>
+    <a onclick="loadPage('security')">🔒 Security Money Return</a>
+  </div>
+
+  <!-- Main Content -->
+  <div class="content">
+    <iframe id="frameContent" src="home.htm"></iframe>
+  </div>
+
+  <script>
+    function loadPage(page) {
+      document.getElementById("frameContent").src = page + ".htm";
+    }
+
+    function setTheme(theme) {
+      if (theme === "default") {
+        document.documentElement.style.setProperty("--navbar-bg", "#1d3557");
+        document.documentElement.style.setProperty("--sidebar-bg", "#2c3e50");
+        document.documentElement.style.setProperty("--sidebar-hover", "#34495e");
+        document.documentElement.style.setProperty("--card-bg", "#fff");
+        document.documentElement.style.setProperty("--card-text", "#333");
+      }
+      if (theme === "green") {
+        document.documentElement.style.setProperty("--navbar-bg", "#2d6a4f");
+        document.documentElement.style.setProperty("--sidebar-bg", "#1b4332");
+        document.documentElement.style.setProperty("--sidebar-hover", "#40916c");
+        document.documentElement.style.setProperty("--card-bg", "#fff");
+        document.documentElement.style.setProperty("--card-text", "#222");
+      }
+      if (theme === "dark") {
+        document.documentElement.style.setProperty("--navbar-bg", "#111");
+        document.documentElement.style.setProperty("--sidebar-bg", "#222");
+        document.documentElement.style.setProperty("--sidebar-hover", "#333");
+        document.documentElement.style.setProperty("--card-bg", "#1e1e1e");
+        document.documentElement.style.setProperty("--card-text", "#eee");
+      }
+      if (theme === "grey") {
+        document.documentElement.style.setProperty("--navbar-bg", "#444");
+        document.documentElement.style.setProperty("--sidebar-bg", "#333");
+        document.documentElement.style.setProperty("--sidebar-hover", "#555");
+        document.documentElement.style.setProperty("--card-bg", "#2b2b2b");
+        document.documentElement.style.setProperty("--card-text", "#ddd");
+      }
+    }
+  </script>
+</body>
+</html>

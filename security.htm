@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Security Money Module</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #2b2b2b; color: #eee; margin: 0; padding: 10px; font-size: 13px; }
+    h2 { color: #fff; font-size: 18px; margin: 0 0 10px 0; }
+    .toolbar { margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+    .toolbar input { padding: 4px; border-radius: 4px; border: 1px solid #555; width: 250px; font-size: 13px; }
+    .toolbar button { padding: 6px 12px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; }
+    .toolbar button:hover { background: #218838; }
+    .spinner { width: 14px; height: 14px; border: 2px solid #fff; border-top: 2px solid transparent; border-radius: 50%; display: inline-block; animation: spin 0.8s linear infinite; }
+    @keyframes spin { from { transform: rotate(0deg);} to { transform: rotate(360deg);} }
+
+    .table-container { height: calc(100vh - 120px); overflow-y: auto; border: 1px solid #555; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th, td { border: 1px solid #555; padding: 6px; text-align: center; word-wrap: break-word; }
+    thead th { position: sticky; top: 0; background: #003366; color: #fff; }
+
+    td input, td select { width: 100%; box-sizing: border-box; font-size: 12px; padding: 4px; }
+    button.action-btn { padding: 4px 8px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; }
+    #message { margin-bottom: 8px; padding: 8px; display: none; border-radius: 5px; font-weight: bold; text-align: center; font-size: 13px; }
+    #message.success { background: #28a745; color: white; }
+    #message.error { background: #dc3545; color: white; }
+    #message.loading { background: #007bff; color: white; }
+  </style>
+</head>
+<body>
+  <h2>Security Money Module</h2>
+
+  <div id="message"></div>
+
+  <div class="toolbar">
+    <input type="text" id="searchInput" placeholder="🔍 Search by UNIQUE NIT, NIT, Vendor..." oninput="filterTable()" />
+    <button id="refreshBtn" onclick="refreshData()">⟳ Refresh</button>
+  </div>
+
+  <div class="table-container">
+    <table id="dataTable">
+      <thead>
+        <tr>
+          <th>Timestamp</th>
+          <th>UNIQUE NIT</th>
+          <th>NIT</th>
+          <th>SL</th>
+          <th>NIT DATE</th>
+          <th>VENDOR</th>
+          <th>Name of the work</th>
+          <th>Source of Fund</th>
+          <th>NET PAYMENT</th>
+          <th>Completion Date</th>
+          <th>Period</th>
+          <th>SECURITY</th>
+          <th>PAYMENT MODE</th>
+          <th>CHEQUE NO/REFERENCES</th>
+          <th>SDM PAYMENT DATE</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <script>
+    const scriptURL = "https://script.google.com/macros/s/AKfycbxnRaI-q8KYwJ1iJbs2b4FTWkiNpprlJ7uWCN48bjF6j-w6WHlLd0GYkDNnJBGszUJ-/exec"; // Replace with your Web App URL
+    let tableData = [];
+
+    async function refreshData() {
+      const btn = document.getElementById("refreshBtn");
+      btn.innerHTML = `<span class="spinner"></span> Refreshing...`;
+      btn.disabled = true;
+      showMessage("Refreshing data...", "loading");
+      await loadData();
+      btn.innerHTML = "⟳ Refresh";
+      btn.disabled = false;
+      showMessage("Data loaded successfully ✅", "success");
+    }
+
+    async function loadData() {
+      const res = await fetch(scriptURL + "?action=getSecurityMoneyData");
+      tableData = await res.json();
+      renderTable(tableData);
+    }
+
+    function renderTable(data) {
+      const tbody = document.querySelector("#dataTable tbody");
+      tbody.innerHTML = "";
+
+      data.forEach((row, i) => {
+        let tr = document.createElement("tr");
+
+        // Non-editable cols (0 → 11)
+        for (let j = 0; j <= 11; j++) {
+          let td = document.createElement("td");
+
+          if (j === 10) {
+            // Period column with conditional formatting
+            td.textContent = row[j] ?? "";
+            const val = row[j] || "";
+            const m = val.match(/(\d+)\s+months?/i);
+            const months = m ? parseInt(m[1], 10) : 0;
+            if (months >= 6) {
+              td.style.backgroundColor = "green";
+              td.style.color = "white";
+              td.style.fontWeight = "bold";
+            }
+          } else {
+            td.textContent = row[j] ?? "";
+          }
+
+          tr.appendChild(td);
+        }
+
+        // Editable cols (12 → 14)
+        for (let j = 12; j <= 14; j++) {
+          let td = document.createElement("td");
+
+          if (j === 12) {
+            // PAYMENT MODE dropdown
+            const val = row[j] || "";
+            td.innerHTML = `
+              <select id="col_${i}_${j}" onchange="toggleButton(${i})">
+                <option value="">--Select--</option>
+                <option value="Cheque" ${val==="Cheque"?"selected":""}>Cheque</option>
+                <option value="Online" ${val==="Online"?"selected":""}>Online</option>
+              </select>`;
+          } else if (j === 14) {
+            // Always date picker
+            const val = row[j] || "";
+            const iso = /^\d{4}-\d{2}-\d{2}$/.test(val) ? val : "";
+            td.innerHTML = `<input type="date" value="${iso}" id="col_${i}_${j}" oninput="toggleButton(${i})">`;
+          } else {
+            td.innerHTML = `<input type="text" value="${row[j] || ""}" id="col_${i}_${j}" oninput="toggleButton(${i})">`;
+          }
+
+          tr.appendChild(td);
+        }
+
+        // Action button
+        let tdAction = document.createElement("td");
+        tdAction.innerHTML = `<button class="action-btn" id="btn_${i}" onclick="updateRow(${i})">SAVE</button>`;
+        tr.appendChild(tdAction);
+
+        tbody.appendChild(tr);
+        toggleButton(i);
+      });
+    }
+
+    function filterTable() {
+      const search = document.getElementById("searchInput").value.toLowerCase();
+      const filtered = tableData.filter(row =>
+        (row[1] && row[1].toString().toLowerCase().includes(search)) ||
+        (row[2] && row[2].toString().toLowerCase().includes(search)) ||
+        (row[5] && row[5].toString().toLowerCase().includes(search))
+      );
+      renderTable(filtered);
+    }
+
+    function toggleButton(i) {
+      const btn = document.getElementById(`btn_${i}`);
+      btn.textContent = "UPDATE";
+      btn.style.background = "blue";
+      btn.style.color = "white";
+    }
+
+    function showMessage(text, type) {
+      const msg = document.getElementById("message");
+      msg.textContent = text;
+      msg.className = type;
+      msg.style.display = "block";
+      setTimeout(() => { msg.style.display = "none"; }, 2500);
+    }
+
+    async function updateRow(i) {
+      const btn = document.getElementById(`btn_${i}`);
+      btn.disabled = true; btn.textContent = "Saving...";
+
+      try {
+        const formData = new FormData();
+        formData.append("action","updateSecurityMoney");
+        formData.append("rowIndex", i);
+
+        for (let j = 12; j <= 14; j++) {
+          formData.append(`col${j}`, document.getElementById(`col_${i}_${j}`).value);
+        }
+
+        const res = await fetch(scriptURL,{method:"POST",body:formData});
+        const result = await res.json();
+
+        if (result.success) {
+          btn.textContent = "Saved ✔"; btn.style.background = "green";
+          showMessage(`Row ${result.row} updated successfully ✅`,"success");
+        } else {
+          btn.textContent = "Failed ✖"; btn.style.background = "red";
+          showMessage("Update failed: " + (result.error || "Unknown"), "error");
+        }
+      } catch (err) {
+        btn.textContent = "Error ✖"; btn.style.background = "red";
+        showMessage("Network error: " + err.message, "error");
+      } finally {
+        setTimeout(()=>{btn.disabled=false; toggleButton(i);},2000);
+      }
+    }
+
+    loadData();
+  </script>
+</body>
+</html>
