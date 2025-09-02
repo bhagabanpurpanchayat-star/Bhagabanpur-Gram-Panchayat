@@ -6,106 +6,48 @@
   <title>GP Management Portal</title>
   <style>
     body { margin: 0; font-family: Arial, sans-serif; background: var(--bg, #f4f6f9); }
-
-    /* Default Theme Variables */
+    @keyframes gradientFlow { 0%{background-position:0% 50%;}50%{background-position:100% 50%;}100%{background-position:0% 50%;}}
     :root {
-      --navbar-bg: #1d3557;
-      --sidebar-bg: #2c3e50;
-      --sidebar-hover: #34495e;
-      --text-color: #fff;
-      --card-bg: #fff;
-      --card-text: #333;
+      --navbar-bg: linear-gradient(270deg, #a8dadc, #457b9d, #1d3557);
+      --sidebar-bg: linear-gradient(270deg, #34495e, #2c3e50, #1d3557);
+      --sidebar-hover: linear-gradient(270deg, #5a6e7f, #3c5a70, #2c3e50);
+      --text-color: #fff; --card-bg:#fff; --card-text:#333;
+      --bar-start:#5b8fa0;--bar-end:#467381;--bar-border:#3a636f;
+      --news-text:#FFFFFF;--pill-radius:14px;--bar-height:30px;--speed:290s;
     }
-
-    /* Navbar */
-    .navbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: var(--navbar-bg);
-      color: var(--text-color);
-      padding: 10px 20px;
-      font-size: 18px;
-      font-weight: bold;
-    }
-
-    /* Sidebar */
-    .sidebar {
-      position: fixed;
-      top: 50px;
-      left: 0;
-      width: 220px;
-      height: calc(100% - 50px);
-      background: var(--sidebar-bg);
-      color: var(--text-color);
-      padding-top: 15px;
-    }
-
-    .sidebar a {
-      display: block;
-      padding: 12px 20px;
-      color: #ecf0f1;
-      text-decoration: none;
-      font-size: 14px;
-      cursor: pointer;
-    }
-
-    .sidebar a:hover { background: var(--sidebar-hover); }
-
-    /* Content Area */
-    .content {
-      margin-left: 220px;
-      padding: 0;
-      height: calc(100vh - 50px);
-    }
-
-    iframe {
-      width: 100%;
-      height: 100%;
-      border: none;
-      background: var(--card-bg);
-    }
-
-    /* Theme dropdown */
-    .dropdown {
-      position: relative;
-      display: inline-block;
-      cursor: pointer;
-    }
-    .dropdown-content {
-      display: none;
-      position: absolute;
-      right: 0;
-      background: #fff;
-      min-width: 180px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-      z-index: 1000;
-      padding: 8px;
-      border-radius: 6px;
-    }
-    .dropdown:hover .dropdown-content {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-    .theme-option {
-      width: 40px;
-      height: 40px;
-      border-radius: 4px;
-      cursor: pointer;
-      border: 2px solid transparent;
-      transition: transform 0.2s, border 0.2s;
-    }
-    .theme-option:hover {
-      transform: scale(1.1);
-      border: 2px solid #000;
-    }
+    .navbar{display:flex;justify-content:space-between;align-items:center;background:var(--navbar-bg);background-size:300% 300%;animation:gradientFlow 10s ease infinite;color:var(--text-color);padding:8px 20px;font-size:16px;font-weight:bold;box-shadow:0 4px 8px rgba(0,0,0,0.5),inset 2px 2px 6px rgba(255,255,255,0.3),inset -2px -2px 6px rgba(0,0,0,0.4);border-bottom:2px solid rgba(255,255,255,0.2);position:relative;z-index:1000;gap:15px;}
+    .navbar .logo{text-shadow:2px 2px 4px rgba(0,0,0,0.6);letter-spacing:1px;}
+    .bar{width:950px;height:var(--bar-height);border-radius:var(--pill-radius);background:linear-gradient(180deg,var(--bar-start),var(--bar-end));border:1px solid var(--bar-border);box-shadow:inset 0 1px 0 rgba(255,255,255,.25),inset 0 -1px 2px rgba(0,0,0,.25),0 2px 6px rgba(0,0,0,.55);overflow:hidden;display:flex;align-items:center;padding-inline:14px;color:var(--news-text);}
+    .ticker{position:relative;width:100%;height:100%;}
+    .track{position:absolute;white-space:nowrap;will-change:transform;animation:scroll var(--speed) linear infinite;font-size:14px;font-weight:normal;color:var(--news-text);}
+    .track span{display:inline-block;padding-right:60px;}
+    .bar:hover .track{animation-play-state:paused;cursor:default;}
+    @keyframes scroll{from{transform:translateX(0);}to{transform:translateX(-50%);}}
+    .clock{font-size:16px;font-weight:bold;color:#fff;padding:6px 12px;border-radius:8px;background:linear-gradient(145deg,#222,#000);box-shadow:inset 2px 2px 4px rgba(255,255,255,0.2),inset -2px -2px 6px rgba(0,0,0,0.6),4px 4px 8px rgba(0,0,0,0.8),-4px -4px 8px rgba(255,255,255,0.1);text-shadow:0 0 6px #00ffcc,0 0 12px #00ffcc;min-width:100px;text-align:center;}
+    .sidebar{position:fixed;top:50px;left:0;width:220px;height:calc(100% - 50px);background:var(--sidebar-bg);background-size:300% 300%;animation:gradientFlow 15s ease infinite;color:var(--text-color);padding-top:15px;overflow-y:auto;box-shadow:3px 0 10px rgba(0,0,0,0.4);display:flex;flex-direction:column;justify-content:space-between;}
+    .sidebar a{display:block;padding:12px 20px;margin:5px 10px;background:linear-gradient(145deg,rgba(255,255,255,0.15),rgba(0,0,0,0.25));border-radius:6px;color:#ecf0f1;text-decoration:none;font-size:14px;cursor:pointer;box-shadow:inset 1px 1px 2px rgba(255,255,255,0.2),inset -1px -1px 2px rgba(0,0,0,0.4),2px 2px 5px rgba(0,0,0,0.5);transition:all 0.3s ease-in-out;}
+    .sidebar a:hover{background:var(--sidebar-hover);background-size:200% 200%;animation:gradientFlow 8s ease infinite;transform:translateY(-2px);box-shadow:0 4px 8px rgba(0,0,0,0.6),inset 1px 1px 3px rgba(255,255,255,0.2);}
+    .submenu{margin-left:10px;border-left:2px solid rgba(255,255,255,0.15);max-height:0;overflow:hidden;transition:max-height 0.3s ease,opacity 0.3s ease;opacity:0;}
+    .submenu a{font-size:13px;padding:8px 20px;margin:3px 10px;background:linear-gradient(145deg,rgba(255,255,255,0.05),rgba(0,0,0,0.25));border-radius:5px;box-shadow:inset 1px 1px 2px rgba(255,255,255,0.15),inset -1px -1px 2px rgba(0,0,0,0.3);}
+    .submenu a:hover{background:var(--sidebar-hover);animation:gradientFlow 6s ease infinite;color:#fff;transform:translateX(3px);}
+    .submenu.open{max-height:500px;opacity:1;}
+    .content{margin-left:220px;padding:0;height:calc(100vh - 50px);}
+    iframe{width:100%;height:100%;border:none;background:var(--card-bg);}
+    .dropdown{position:relative;display:inline-block;cursor:pointer;}
+    .dropdown-content{display:none;position:absolute;right:0;background:#fff;min-width:180px;border-radius:6px;}
+    .dropdown:hover .dropdown-content{display:flex;flex-wrap:wrap;gap:8px;}
+    .theme-option{width:40px;height:40px;border-radius:4px;cursor:pointer;border:2px solid transparent;}
+    .weather{padding:10px;border-top:1px solid rgba(255,255,255,0.2);text-align:center;}
+    .weather h3{font-size:14px;margin:5px 0;color:#fff;}
+    .weather iframe{width:100%;height:200px;border:none;border-radius:6px;}
   </style>
 </head>
 <body>
   <!-- Navbar -->
   <div class="navbar">
-    <div class="logo">Bhagabanur Gram Panchayat</div>
+    <div class="logo">Bhagabanpur Gram Panchayat</div>
+    <div class="bar"><div class="ticker"><div class="track" id="track1"></div><div class="track" id="track2"></div></div></div>
+    <div class="clock" id="clock">00:00:00</div>
     <div class="nav-links">
       <div class="dropdown">
         <span>Themes ▾</span>
@@ -121,57 +63,70 @@
 
   <!-- Sidebar -->
   <div class="sidebar">
-    <a onclick="loadPage('home')">🏠 Home</a>
-    <a onclick="loadPage('tender')">📑 Tender Management</a>
-    <a onclick="loadPage('plan')">🗂 Action Plan Entry</a>
-    <a onclick="loadPage('nit')">📝 Prepare NIT</a>
-    <a onclick="loadPage('sale')">💰 Sale of Tender Form</a>
-    <a onclick="loadPage('acceptance')">✔ Acceptance & EMD Return</a>
-    <a onclick="loadPage('workorder')">📜 Issue Work Order</a>
-    <a onclick="loadPage('bill')">📊 Bill Payment & Deduction</a>
-    <a onclick="loadPage('security')">🔒 Security Money Return</a>
+    <div>
+      <a onclick="loadPage('home')">🏠 Home</a>
+      <a onclick="toggleSubmenu('submenu-profile')">👤 Basic Profile ▾</a>
+      <div class="submenu" id="submenu-profile">
+        <a onclick="loadPage('allmember')">👥 Member Details</a>
+        <a onclick="loadPage('uposamity')">🤝 Upo-Samity Details</a>
+      </div>
+      <a onclick="loadPage('plan')">🗂 Action Plan Entry</a>
+      <a onclick="toggleSubmenu('submenu-tender')">📑 Tender Management ▾</a>
+      <div class="submenu" id="submenu-tender">
+        <a onclick="loadPage('nit')">📝 Prepare NIT</a>
+        <a onclick="loadPage('sale')">💰 Sale of Tender Form</a>
+        <a onclick="loadPage('acceptance')">✔ Acceptance & EMD Return</a>
+        <a onclick="loadPage('workorder')">📜 Issue Work Order</a>
+        <a onclick="loadPage('bill')">📊 Bill Payment & Deduction</a>
+        <a onclick="loadPage('security')">🔒 Security Money Return</a>
+      </div>
+    </div>
+    <!-- Weather -->
+    <div class="weather">
+      <h3>🌦 Live Weather</h3>
+      <iframe src="https://embed.windy.com/embed2.html?lat=25.021&lon=88.151&zoom=7&level=surface&overlay=wind&product=gfs&menu=&message=&marker=&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=default&metricTemp=default" frameborder="0"></iframe>
+    </div>
   </div>
 
   <!-- Main Content -->
-  <div class="content">
-    <iframe id="frameContent" src="home.htm"></iframe>
-  </div>
+  <div class="content"><iframe id="frameContent" src="home.htm"></iframe></div>
 
   <script>
-    function loadPage(page) {
-      document.getElementById("frameContent").src = page + ".htm";
+    function loadPage(page){document.getElementById("frameContent").src=page+".htm";}
+    function toggleSubmenu(id){document.getElementById(id).classList.toggle("open");}
+    function setTheme(theme){
+      if(theme==="default"){document.documentElement.style.setProperty("--navbar-bg","linear-gradient(270deg,#a8dadc,#457b9d,#1d3557)");document.documentElement.style.setProperty("--sidebar-bg","linear-gradient(270deg,#34495e,#2c3e50,#1d3557)");document.documentElement.style.setProperty("--sidebar-hover","linear-gradient(270deg,#5a6e7f,#3c5a70,#2c3e50)");}
+      if(theme==="green"){document.documentElement.style.setProperty("--navbar-bg","linear-gradient(270deg,#95d5b2,#52b788,#1b4332)");document.documentElement.style.setProperty("--sidebar-bg","linear-gradient(270deg,#2d6a4f,#1b4332,#081c15)");document.documentElement.style.setProperty("--sidebar-hover","linear-gradient(270deg,#40916c,#2d6a4f,#1b4332)");}
+      if(theme==="dark"){document.documentElement.style.setProperty("--navbar-bg","linear-gradient(270deg,#666,#222,#111)");document.documentElement.style.setProperty("--sidebar-bg","linear-gradient(270deg,#333,#111,#000)");document.documentElement.style.setProperty("--sidebar-hover","linear-gradient(270deg,#444,#222,#111)");}
+      if(theme==="grey"){document.documentElement.style.setProperty("--navbar-bg","linear-gradient(270deg,#bbb,#555,#222)");document.documentElement.style.setProperty("--sidebar-bg","linear-gradient(270deg,#666,#444,#222)");document.documentElement.style.setProperty("--sidebar-hover","linear-gradient(270deg,#888,#555,#333)");}
     }
 
-    function setTheme(theme) {
-      if (theme === "default") {
-        document.documentElement.style.setProperty("--navbar-bg", "#1d3557");
-        document.documentElement.style.setProperty("--sidebar-bg", "#2c3e50");
-        document.documentElement.style.setProperty("--sidebar-hover", "#34495e");
-        document.documentElement.style.setProperty("--card-bg", "#fff");
-        document.documentElement.style.setProperty("--card-text", "#333");
-      }
-      if (theme === "green") {
-        document.documentElement.style.setProperty("--navbar-bg", "#2d6a4f");
-        document.documentElement.style.setProperty("--sidebar-bg", "#1b4332");
-        document.documentElement.style.setProperty("--sidebar-hover", "#40916c");
-        document.documentElement.style.setProperty("--card-bg", "#fff");
-        document.documentElement.style.setProperty("--card-text", "#222");
-      }
-      if (theme === "dark") {
-        document.documentElement.style.setProperty("--navbar-bg", "#111");
-        document.documentElement.style.setProperty("--sidebar-bg", "#222");
-        document.documentElement.style.setProperty("--sidebar-hover", "#333");
-        document.documentElement.style.setProperty("--card-bg", "#1e1e1e");
-        document.documentElement.style.setProperty("--card-text", "#eee");
-      }
-      if (theme === "grey") {
-        document.documentElement.style.setProperty("--navbar-bg", "#444");
-        document.documentElement.style.setProperty("--sidebar-bg", "#333");
-        document.documentElement.style.setProperty("--sidebar-hover", "#555");
-        document.documentElement.style.setProperty("--card-bg", "#2b2b2b");
-        document.documentElement.style.setProperty("--card-text", "#ddd");
-      }
+    /* News API */
+    const API_URL="https://script.google.com/macros/s/AKfycbyQHR3YpftGsAK1ElSDiN8oNHLbtJtvyxFe93a3MG91RDUD-Qwz1mJOV2WoDbZebYTe/exec";
+    async function loadHeadlines(){
+      try{
+        const res=await fetch(API_URL);const headlines=await res.json();
+        if(!headlines.length){setTracks(["<span>No headlines found</span>"]);return;}
+        const items=headlines.map(h=>h.link?`<span><a href="${h.link}" target="_blank" style="color:var(--news-text);text-decoration:none">${escapeHtml(h.title)}</a></span>`:`<span>${escapeHtml(h.title)}</span>`);
+        const joined=items.join('<span> • </span>');
+        setTracks([joined,joined]);
+      }catch(err){console.error(err);setTracks(["<span>Failed to load</span>"]);}
     }
+    function setTracks(arr){document.getElementById("track1").innerHTML=arr[0];document.getElementById("track2").innerHTML=arr[1];}
+    function escapeHtml(s){
+      return s.replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));
+    }
+    loadHeadlines();
+
+    /* Clock */
+    function updateClock(){
+      const now=new Date();
+      const h=String(now.getHours()).padStart(2,"0");
+      const m=String(now.getMinutes()).padStart(2,"0");
+      const s=String(now.getSeconds()).padStart(2,"0");
+      document.getElementById("clock").textContent=`${h}:${m}:${s}`;
+    }
+    setInterval(updateClock,1000);updateClock();
   </script>
 </body>
 </html>
