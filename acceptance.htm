@@ -65,25 +65,22 @@
       display: inline-block;
       animation: spin 0.8s linear infinite;
     }
-    @keyframes spin {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
-    }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     table {
       width: 100%;
       border-collapse: collapse;
       margin-top: 15px;
-      font-size: 13px;   /* 🔹 Reduced font size */
+      font-size: 13px;
     }
     th, td {
       border: 1px solid #555;
-      padding: 6px;      /* 🔹 Smaller padding */
+      padding: 6px;
       text-align: center;
     }
     thead {
       background: #003366;
       color: #fff;
-      position: sticky;   /* 🔹 Sticky header */
+      position: sticky;
       top: 0;
       z-index: 2;
     }
@@ -108,6 +105,83 @@
     #message.loading { background: #007bff; color: white; }
     .accepted { color: green; font-weight: bold; }
     .rejected { color: red; font-weight: bold; }
+
+    /* 🔹 Modal (centered) */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.6);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+    .modal-content {
+      background: #f0f0f0;
+      color: #000;
+      padding: 20px;
+      border-radius: 10px;
+      width: auto;
+      max-width: 95%;
+      max-height: 80%;
+      overflow-y: auto;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+      margin: auto;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-summary {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .modal-content h3 { margin: 0; color: #333; }
+
+    .modal table {
+      table-layout: auto;
+      width: auto !important;
+      margin: 10px auto 0 auto;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    .modal th, .modal td {
+      border: 1px solid #aaa;
+      padding: 4px 6px;
+      text-align: center;
+      white-space: nowrap;
+      width: auto !important;
+    }
+    .modal input, .modal select {
+      font-size: 12px;
+      padding: 4px;
+      width: auto;
+      max-width: 110px;
+      box-sizing: border-box;
+    }
+
+    .modal .btn-bar {
+      margin-top: 12px;
+      text-align: right;
+    }
+    .modal .btn-bar button {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 4px;
+      margin-left: 5px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .close-btn { background: #dc3545; color: #fff; }
+    .save-btn { background: #28a745; color: #fff; }
+
+    @media (max-width: 520px) {
+      .modal input, .modal select { max-width: 90px; font-size: 11px; }
+      .toolbar input { width: 100%; }
+    }
   </style>
 </head>
 <body>
@@ -145,208 +219,313 @@
     <tbody></tbody>
   </table>
 
+  <!-- 🔹 Vendor Modal -->
+  <div class="modal" id="vendorModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Vendor: <span id="modalVendorName"></span></h3>
+        <div class="modal-summary">
+          <span class="badge green" id="modalPaid">PAID: ₹0</span>
+          <span class="badge red" id="modalUnpaid">UNPAID: ₹0</span>
+        </div>
+      </div>
+
+      <table id="modalTable">
+        <thead>
+          <tr>
+            <th>NIT</th>
+            <th>SL</th>
+            <th>NIT DATE</th>
+            <th>EARNEST MONEY</th>
+            <th>Payment</th>
+            <th>Tender Status</th>
+            <th>Cheque No</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+
+      <div class="btn-bar">
+        <button class="close-btn" onclick="closeModal()">Close</button>
+        <button class="save-btn" onclick="saveModalData()">Save All</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const scriptURL = "https://script.google.com/macros/s/AKfycbx4awV8-rBgjH3ZS0T_ps90f3gwfK1SB9kGpWJUH5KjYQkMt2ZRoYSwzjhFFpQSz7E5/exec";
     let tableData = [];
+    let currentVendor = null;
 
-    async function refreshData() {
-      const btn = document.getElementById("refreshBtn");
-      const oldText = btn.innerHTML;
-      btn.innerHTML = `<span class="spinner"></span> Refreshing...`;
-      btn.disabled = true;
-      showMessage("Refreshing data...", "loading");
+    async function refreshData(){
+      const btn=document.getElementById("refreshBtn");
+      const oldText=btn.innerHTML;
+      btn.innerHTML=`<span class="spinner"></span> Refreshing...`;
+      btn.disabled=true;
+      showMessage("Refreshing data...","loading");
       await loadData();
-      btn.innerHTML = oldText;
-      btn.disabled = false;
-      showMessage("Data loaded successfully ✅", "success");
+      btn.innerHTML=oldText;
+      btn.disabled=false;
+      showMessage("Data loaded successfully ✅","success");
     }
 
-    async function loadData() {
-      const res = await fetch(scriptURL + "?action=getEarnestMoneyData");
-      tableData = await res.json();
-      renderTable(tableData);
+    async function loadData(){
+      try {
+        const res = await fetch(scriptURL + "?action=getEarnestMoneyData");
+        tableData = await res.json();
+      } catch (err) {
+        console.error("Load error:", err);
+        tableData = [];
+      }
+      const items = tableData.map((row, idx) => ({ row, idx }));
+      renderTable(items);
       updateSummary();
     }
 
-    function renderTable(data) {
-      const tbody = document.querySelector("#dataTable tbody");
-      tbody.innerHTML = "";
-
-      data.forEach((row, i) => {
+    function renderTable(items){
+      const tbody=document.querySelector("#dataTable tbody");
+      tbody.innerHTML="";
+      items.forEach(item => {
+        const row = item.row;
+        const i = item.idx;
         let tr = document.createElement("tr");
-
-        for (let j = 0; j < 8; j++) {
+        for (let j=0; j<6; j++){
           let td = document.createElement("td");
-          td.textContent = row[j] ?? "";
+          if (j === 5) {
+            td.innerHTML = `<a href="#" onclick="openModal('${escapeHtml(row[5])}');return false;">${escapeHtml(row[5]||"")}</a>`;
+          } else {
+            td.textContent = row[j] ?? "";
+          }
           tr.appendChild(td);
         }
-
-        // Col 9 Payment Status
+        let td6 = document.createElement("td"); td6.textContent = row[6] ?? ""; tr.appendChild(td6);
+        let td7 = document.createElement("td"); td7.textContent = row[7] ?? ""; tr.appendChild(td7);
+        let td8 = document.createElement("td");
+        td8.innerHTML = `<select id="payment_${i}" onchange="updateSummary();toggleButton(${i})">
+          <option value="PAID" ${row[8]==="PAID"?"selected":""}>PAID</option>
+          <option value="UNPAID" ${row[8]==="UNPAID"?"selected":""}>UNPAID</option>
+        </select>`;
+        tr.appendChild(td8);
         let td9 = document.createElement("td");
-        td9.innerHTML = `
-          <select id="payment_${i}" onchange="updateSummary();toggleButton(${i})" style="width:90px;font-size:12px">
-            <option value="PAID" ${row[8] === "PAID" ? "selected" : ""}>PAID</option>
-            <option value="UNPAID" ${row[8] === "UNPAID" ? "selected" : ""}>UNPAID</option>
-          </select>`;
+        td9.innerHTML = `<select id="status_${i}" onchange="updateTenderColor(${i});toggleButton(${i})">
+          <option value="" ${row[9]===""?"selected":""}></option>
+          <option value="ACCEPTED" ${row[9]==="ACCEPTED"?"selected":""}>ACCEPTED</option>
+          <option value="REJECTED" ${row[9]==="REJECTED"?"selected":""}>REJECTED</option>
+        </select>`;
         tr.appendChild(td9);
-
-        // Col 10 Tender Status
         let td10 = document.createElement("td");
-        td10.innerHTML = `
-          <select id="status_${i}" onchange="updateTenderColor(${i});toggleButton(${i})" style="width:110px;font-size:12px">
-            <option value="" ${row[9] === "" ? "selected" : ""}></option>
-            <option value="ACCEPTED" ${row[9] === "ACCEPTED" ? "selected" : ""}>ACCEPTED</option>
-            <option value="REJECTED" ${row[9] === "REJECTED" ? "selected" : ""}>REJECTED</option>
-          </select>`;
+        td10.innerHTML = `<input type="text" id="cheque_${i}" value="${escapeHtml(row[10]||'')}" oninput="updatePaymentStatus(${i});toggleButton(${i})">`;
         tr.appendChild(td10);
-
-        // Col 11 Cheque No
         let td11 = document.createElement("td");
-        td11.innerHTML = `<input type="text" value="${row[10] || ""}" id="cheque_${i}" oninput="updatePaymentStatus(${i});toggleButton(${i})" style="width:100px;font-size:12px">`;
+        td11.innerHTML = `<input type="date" id="date_${i}" value="${formatDateForInput(row[11])}" oninput="toggleButton(${i})">`;
         tr.appendChild(td11);
-
-        // Col 12 Date
-        let td12 = document.createElement("td");
-        td12.innerHTML = `<input type="date" id="date_${i}" value="${formatDateForInput(row[11])}" oninput="toggleButton(${i})" style="font-size:12px">`;
-        tr.appendChild(td12);
-
-        // Action
         let tdAction = document.createElement("td");
         tdAction.innerHTML = `<button class="action-btn" id="btn_${i}" onclick="updateRow(${i})">...</button>`;
         tr.appendChild(tdAction);
-
         tbody.appendChild(tr);
-
         updateTenderColor(i);
         toggleButton(i);
       });
       updateSummary();
     }
 
-    function formatDateForInput(dateVal) {
-      if (!dateVal) return "";
-      try {
-        if (Object.prototype.toString.call(dateVal) === "[object Date]" && !isNaN(dateVal)) {
-          return dateVal.toISOString().split("T")[0];
-        }
-        if (!isNaN(dateVal)) {
-          let base = new Date(1899, 11, 30);
-          base.setDate(base.getDate() + Number(dateVal));
-          return base.toISOString().split("T")[0];
-        }
-        let str = dateVal.toString().replace(/\./g,"/").replace(/-/g,"/").trim();
-        let parts = str.split("/");
-        if (parts.length === 3) {
-          if (parts[0].length === 4) return `${parts[0]}-${parts[1].padStart(2,"0")}-${parts[2].padStart(2,"0")}`;
-          if (parts[2].length === 4) return `${parts[2]}-${parts[1].padStart(2,"0")}-${parts[0].padStart(2,"0")}`;
-        }
-        return "";
-      } catch { return ""; }
+    function escapeHtml(text){
+      if(text === undefined || text === null) return "";
+      return String(text)
+        .replace(/&/g,"&amp;")
+        .replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;")
+        .replace(/"/g,"&quot;")
+        .replace(/'/g,"&#039;");
     }
 
-    function updateTenderColor(i) {
-      const statusSelect = document.getElementById(`status_${i}`);
-      if (!statusSelect) return;
-      if (statusSelect.value === "ACCEPTED") {
-        statusSelect.classList.add("accepted"); statusSelect.classList.remove("rejected");
-      } else if (statusSelect.value === "REJECTED") {
-        statusSelect.classList.add("rejected"); statusSelect.classList.remove("accepted");
-      } else {
-        statusSelect.classList.remove("accepted","rejected");
-      }
+    function formatDateForInput(val){
+      if(!val) return "";
+      if(/^\d{4}-\d{2}-\d{2}$/.test(val)) return val;
+      if(/^\d{2}\/\d{2}\/\d{4}$/.test(val)){ let [d,m,y]=val.split("/"); return `${y}-${m.padStart(2,"0")}-${d.padStart(2,"0")}`; }
+      let d=new Date(val); if(!isNaN(d)) return d.toISOString().split("T")[0];
+      if(!isNaN(Number(val))){ let base=new Date(1899,11,30); base.setDate(base.getDate()+Number(val)); return base.toISOString().split("T")[0]; }
+      return "";
     }
 
-    function updatePaymentStatus(i) {
-      const chequeVal = document.getElementById(`cheque_${i}`).value.trim();
-      const paymentSelect = document.getElementById(`payment_${i}`);
-      paymentSelect.value = chequeVal !== "" ? "PAID" : "UNPAID";
+    function updateTenderColor(i){
+      const s=document.getElementById(`status_${i}`); if(!s) return;
+      s.classList.remove("accepted","rejected");
+      if(s.value==="ACCEPTED") s.classList.add("accepted");
+      else if(s.value==="REJECTED") s.classList.add("rejected");
+    }
+
+    function updatePaymentStatus(i){
+      const chequeVal = (document.getElementById(`cheque_${i}`)?.value || "").trim();
+      const sel = document.getElementById(`payment_${i}`);
+      if(sel) sel.value = chequeVal ? "PAID" : "UNPAID";
       updateSummary();
     }
 
-    function updateSummary() {
-      let paidSum = 0, unpaidSum = 0;
-      tableData.forEach((row, i) => {
-        const paymentStatus = document.getElementById(`payment_${i}`)?.value || row[8];
-        const earnestMoney = parseFloat(row[6]) || 0;
-        if (paymentStatus === "PAID") paidSum += earnestMoney;
-        else unpaidSum += earnestMoney;
+    function updateSummary(){
+      let paid = 0, unpaid = 0;
+      tableData.forEach((r, i) => {
+        const st = document.getElementById(`payment_${i}`)?.value || r[8] || "";
+        const val = parseFloat(r[6]) || 0;
+        if(st === "PAID") paid += val; else unpaid += val;
       });
-      document.getElementById("paidCount").textContent = `PAID: ₹${paidSum.toLocaleString()}`;
-      document.getElementById("unpaidCount").textContent = `UNPAID: ₹${unpaidSum.toLocaleString()}`;
+      document.getElementById("paidCount").textContent = `PAID: ₹${paid.toLocaleString()}`;
+      document.getElementById("unpaidCount").textContent = `UNPAID: ₹${unpaid.toLocaleString()}`;
     }
 
-    function filterTable() {
-      const search = document.getElementById("searchInput").value.toLowerCase();
-      const filtered = tableData.filter(row =>
-        (row[1] && row[1].toString().toLowerCase().includes(search)) ||
-        (row[2] && row[2].toString().toLowerCase().includes(search)) ||
-        (row[4] && row[4].toString().toLowerCase().includes(search)) ||
-        (row[5] && row[5].toString().toLowerCase().includes(search))
-      );
+    function filterTable(){
+      const search = (document.getElementById("searchInput").value || "").trim().toLowerCase();
+      const allItems = tableData.map((r, idx) => ({ row: r, idx }));
+      if(!search){ renderTable(allItems); return; }
+      const filtered = allItems.filter(({row}) => {
+        return [1,2,4,5].some(c => ((row[c]||"").toString().toLowerCase().includes(search)));
+      });
       renderTable(filtered);
     }
 
-    function toggleButton(i) {
-      const tenderStatus = document.getElementById(`status_${i}`)?.value.trim() || "";
-      const chequeNo = document.getElementById(`cheque_${i}`)?.value.trim() || "";
-      const dateVal = document.getElementById(`date_${i}`)?.value.trim() || "";
-      const btn = document.getElementById(`btn_${i}`);
-      if (!tenderStatus && !chequeNo && !dateVal) {
-        btn.textContent = "SAVE"; btn.style.background = "green"; btn.style.color = "white";
-      } else {
-        btn.textContent = "UPDATE"; btn.style.background = "blue"; btn.style.color = "white";
-      }
+    function toggleButton(i){
+      const t = document.getElementById(`status_${i}`)?.value.trim() || "";
+      const c = document.getElementById(`cheque_${i}`)?.value.trim() || "";
+      const d = document.getElementById(`date_${i}`)?.value.trim() || "";
+      const b = document.getElementById(`btn_${i}`);
+      if(!b) return;
+      if(!t && !c && !d){ b.textContent="SAVE"; b.style.background="green"; b.style.color="white"; }
+      else{ b.textContent="UPDATE"; b.style.background="blue"; b.style.color="white"; }
     }
 
-    function showMessage(text, type) {
-      const msg = document.getElementById("message");
-      msg.textContent = text;
-      msg.className = type;
-      msg.style.display = "block";
-      setTimeout(() => { msg.style.display = "none"; }, 2500);
+    function showMessage(text, type){
+      const m = document.getElementById("message");
+      m.textContent = text;
+      m.className = type || "";
+      m.style.display = "block";
+      setTimeout(()=>{ m.style.display = "none"; }, 2500);
     }
 
-    async function updateRow(i) {
-      const paymentStatus = document.getElementById(`payment_${i}`)?.value || "";
-      const tenderStatus = document.getElementById(`status_${i}`)?.value || "";
-      const chequeNo = document.getElementById(`cheque_${i}`)?.value || "";
-      const dateVal = document.getElementById(`date_${i}`)?.value || "";
+    async function updateRow(i, overrides = {}){
+      const payment = overrides.paymentStatus || document.getElementById(`payment_${i}`)?.value || "";
+      const tender = overrides.tenderStatus || document.getElementById(`status_${i}`)?.value || "";
+      const cheque = overrides.chequeNo || document.getElementById(`cheque_${i}`)?.value || "";
+      const date = overrides.dateVal || document.getElementById(`date_${i}`)?.value || "";
       const btn = document.getElementById(`btn_${i}`);
-
-      btn.disabled = true; btn.textContent = "Saving...";
-
+      if(btn){ btn.disabled = true; btn.textContent = "Saving..."; }
       try {
-        const formData = new FormData();
-        formData.append("action","updateEarnestMoney");
-        formData.append("rowIndex", i);
-        formData.append("paymentStatus", paymentStatus);
-        formData.append("tenderStatus", tenderStatus);
-        formData.append("chequeNo", chequeNo);
-        formData.append("dateVal", dateVal);
-
-        const res = await fetch(scriptURL,{method:"POST",body:formData});
+        const fd = new FormData();
+        fd.append("action","updateEarnestMoney");
+        fd.append("rowIndex", i);
+        fd.append("paymentStatus", payment);
+        fd.append("tenderStatus", tender);
+        fd.append("chequeNo", cheque);
+        fd.append("dateVal", date);
+        const res = await fetch(scriptURL, { method: "POST", body: fd });
         const result = await res.json();
-
-        if (result.success) {
-          btn.textContent = "Saved ✔"; btn.style.background = "green";
-          showMessage(`Row ${result.row} updated successfully ✅`,"success");
-          const row = document.querySelector(`#btn_${i}`).closest("tr");
-          row.style.backgroundColor = "#d4edda";
-          setTimeout(()=>{row.style.backgroundColor=""; toggleButton(i);},1500);
+        if(result.success){
+          if(btn){ btn.textContent = "Saved ✔"; btn.style.background = "green"; }
+          showMessage(`Row ${result.row} updated ✅`,"success");
+          if(tableData[i]){
+            tableData[i][8] = payment;
+            tableData[i][9] = tender;
+            tableData[i][10] = cheque;
+            tableData[i][11] = date;
+          }
           updateSummary();
         } else {
-          btn.textContent = "Failed ✖"; btn.style.background = "red";
+          if(btn){ btn.textContent = "Failed ✖"; btn.style.background = "red"; }
           showMessage("Update failed: " + (result.error || "Unknown"), "error");
         }
       } catch (err) {
-        btn.textContent = "Error ✖"; btn.style.background = "red";
+        if(btn){ btn.textContent = "Error ✖"; btn.style.background = "red"; }
         showMessage("Network error: " + err.message, "error");
       } finally {
-        setTimeout(()=>{btn.disabled=false; toggleButton(i);},2000);
+        setTimeout(()=>{ if(btn) { btn.disabled = false; toggleButton(i); } }, 1500);
       }
     }
 
-    loadData();
+    function openModal(vendor){
+      currentVendor = vendor;
+      document.getElementById("modalVendorName").textContent = vendor;
+      const tbody = document.querySelector("#modalTable tbody");
+      tbody.innerHTML = "";
+      tableData.forEach((r, i) => {
+        if(r[5] === vendor && (r[8] === "UNPAID" || r[8] === "" || r[8] === null || r[8] === undefined)){
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${escapeHtml(r[2]||"")}</td>
+            <td>${escapeHtml(r[3]||"")}</td>
+            <td>${escapeHtml(r[4]||"")}</td>
+            <td>${escapeHtml(r[6]||"")}</td>
+            <td>
+              <select data-index="${i}" class="modal-payment" onchange="updateModalSummary()">
+                <option value="PAID">PAID</option>
+                <option value="UNPAID" selected>UNPAID</option>
+              </select>
+            </td>
+            <td>
+              <select data-index="${i}" class="modal-tender">
+                <option value=""></option>
+                <option value="ACCEPTED">ACCEPTED</option>
+                <option value="REJECTED">REJECTED</option>
+              </select>
+            </td>
+            <td><input type="text" data-index="${i}" class="modal-cheque" oninput="handleModalCheque(this)"></td>
+            <td><input type="date" data-index="${i}" class="modal-date"></td>
+          `;
+          tbody.appendChild(tr);
+        }
+      });
+      document.getElementById("vendorModal").style.display = "flex";
+      updateModalSummary();
+    }
+
+    function closeModal(){
+      document.getElementById("vendorModal").style.display = "none";
+    }
+
+    function handleModalCheque(input){
+      const idx = input.dataset.index;
+      const val = (input.value || "").trim();
+      const paySel = document.querySelector(`.modal-payment[data-index='${idx}']`);
+      if(paySel) paySel.value = val ? "PAID" : "UNPAID";
+      updateModalSummary();
+    }
+
+    function updateModalSummary(){
+      let paid = 0, unpaid = 0;
+      const rows = document.querySelectorAll("#modalTable tbody tr");
+      rows.forEach(r => {
+        const sel = r.querySelector(".modal-payment");
+        const idx = sel?.dataset.index;
+        const status = sel?.value || "UNPAID";
+        const val = parseFloat(tableData[idx]?.[6]) || 0;
+        if(status === "PAID") paid += val; else unpaid += val;
+      });
+      document.getElementById("modalPaid").textContent = `PAID: ₹${paid.toLocaleString()}`;
+      document.getElementById("modalUnpaid").textContent = `UNPAID: ₹${unpaid.toLocaleString()}`;
+    }
+
+    async function saveModalData(){
+      const saveBtn = document.querySelector("#vendorModal .save-btn");
+      saveBtn.disabled = true;
+      saveBtn.textContent = "Save All - Saving...";
+
+      const rows = document.querySelectorAll("#modalTable tbody tr");
+      for(const r of rows){
+        const idx = r.querySelector(".modal-payment").dataset.index;
+        const payment = r.querySelector(".modal-payment").value;
+        const tender = r.querySelector(".modal-tender").value;
+        const cheque = r.querySelector(".modal-cheque").value;
+        const date = r.querySelector(".modal-date").value;
+        await updateRow(idx, { paymentStatus: payment, tenderStatus: tender, chequeNo: cheque, dateVal: date });
+      }
+
+      saveBtn.textContent = "Save All";
+      saveBtn.disabled = false;
+      showMessage("Data saved successfully ✅","success");
+      closeModal();
+      await loadData();
+    }
+
+    window.onload = loadData;
   </script>
 </body>
 </html>
