@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Status Tracker - Vertical Steps</title>
+  <style>
+    body {
+      font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      margin: 0;
+      background: #f7f9fb;
+      color: #1e293b;
+    }
+    .app {
+      max-width: 700px;
+      margin: 40px auto;
+      padding: 24px;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+    }
+    h1 {
+      font-size: 24px;
+      margin-bottom: 16px;
+    }
+    .controls {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+    input[type=text] {
+      flex: 1;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid #d1d5db;
+      font-size: 15px;
+    }
+    button {
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: 0;
+      background: #2563eb;
+      color: white;
+      cursor: pointer;
+      transition: background .2s;
+    }
+    button:hover {
+      background: #1d4ed8;
+    }
+    .stepper {
+      position: relative;
+      margin-top: 30px;
+    }
+    .step {
+      display: flex;
+      align-items: flex-start;
+      position: relative;
+      padding: 14px;
+      padding-bottom: 30px;
+      border-radius: 10px;
+      transition: background .3s, box-shadow .3s, border-left .3s;
+      cursor: pointer;
+    }
+    .step.active {
+      background: #eff6ff;
+      border-left: 4px solid #2563eb;
+      box-shadow: 0 3px 10px rgba(37,99,235,0.2);
+    }
+    .step:not(:last-child)::before {
+      content: "";
+      position: absolute;
+      left: 34px;
+      bottom: 0;
+      width: 2px;
+      height: 30px;
+      background: #d1d5db;
+    }
+    .icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      margin-right: 14px;
+      flex-shrink: 0;
+    }
+    .icon.done {
+      background: #22c55e;
+      color: white;
+    }
+    .icon.pending {
+      background: #e5e7eb;
+      color: #9ca3af;
+    }
+    .step-content {
+      flex: 1;
+    }
+    .step-title {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .step-sub {
+      font-size: 13px;
+      color: #6b7280;
+    }
+    .details-card {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.4s ease, opacity 0.4s ease;
+      opacity: 0;
+    }
+    .step.active .details-card {
+      margin-top: 12px;
+      background: #fff;
+      border-radius: 8px;
+      padding: 12px 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      opacity: 1;
+      max-height: 200px;
+    }
+    .detail-label {
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: #374151;
+    }
+    .detail-value {
+      font-size: 14px;
+      color: #4b5563;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <h1>Status Tracker</h1>
+    <div class="controls">
+      <input id="searchInput" type="text" placeholder="Search by Activity Description..." />
+      <button id="searchBtn">Search</button>
+    </div>
+    <div id="results"></div>
+  </div>
+
+  <script>
+    const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwtIbqTSUbkSEZrrVXd7vjY00Dv-sAAZZR2qLqHOuxaKWWWp3kb7t8qJ-4JqLC1cVw/exec";
+    const STEPS = [
+      'Preare NIT',
+      'NIT Register',
+      'Sale of Tender Form',
+      'TENDER FORM REGISTER',
+      'EARNEST MONEY REGISTER',
+      'Work Order',
+      'Bill Payment',
+      'SD MONEY Return'
+    ];
+
+    let rows = [];
+
+    async function fetchSheet() {
+      try {
+        const res = await fetch(WEBAPP_URL);
+        rows = await res.json();
+      } catch (err) {
+        alert('Error loading data: ' + err);
+      }
+    }
+
+    function renderTracker(row) {
+      const container = document.createElement('div');
+      container.className = 'stepper';
+
+      STEPS.forEach((step, i) => {
+        const done = row[step] && row[step].toString().trim() !== '';
+        const div = document.createElement('div');
+        div.className = 'step';
+
+        const icon = document.createElement('div');
+        icon.className = 'icon ' + (done ? 'done' : 'pending');
+        icon.textContent = done ? '✔' : '✖';
+
+        const content = document.createElement('div');
+        content.className = 'step-content';
+        const title = document.createElement('div');
+        title.className = 'step-title';
+        title.textContent = step;
+        const sub = document.createElement('div');
+        sub.className = 'step-sub';
+        sub.textContent = done ? 'Completed' : 'Pending';
+
+        const details = document.createElement('div');
+        details.className = 'details-card';
+        const label = document.createElement('div');
+        label.className = 'detail-label';
+        label.textContent = step + ' Details:';
+        const value = document.createElement('div');
+        value.className = 'detail-value';
+        value.textContent = row[step] || 'No details available';
+
+        details.appendChild(label);
+        details.appendChild(value);
+
+        content.appendChild(title);
+        content.appendChild(sub);
+        content.appendChild(details);
+
+        div.appendChild(icon);
+        div.appendChild(content);
+
+        div.addEventListener('click', () => {
+          document.querySelectorAll('.step').forEach(s => {
+            if (s !== div) s.classList.remove('active');
+          });
+          div.classList.toggle('active');
+        });
+
+        container.appendChild(div);
+      });
+
+      return container;
+    }
+
+    function performSearch() {
+      const q = document.getElementById('searchInput').value.trim().toLowerCase();
+      const resultsEl = document.getElementById('results');
+      resultsEl.innerHTML = '';
+
+      if (!q) return;
+
+      const match = rows.find(r => (r['Activity Description'] || '').toString().toLowerCase().includes(q));
+      if (!match) {
+        resultsEl.textContent = 'No activity found.';
+        return;
+      }
+
+      const title = document.createElement('h2');
+      title.textContent = match['Activity Description'];
+      resultsEl.appendChild(title);
+
+      resultsEl.appendChild(renderTracker(match));
+    }
+
+    document.getElementById('searchBtn').addEventListener('click', performSearch);
+    document.getElementById('searchInput').addEventListener('keyup', e => { if (e.key === 'Enter') performSearch(); });
+
+    fetchSheet();
+  </script>
+</body>
+</html>
