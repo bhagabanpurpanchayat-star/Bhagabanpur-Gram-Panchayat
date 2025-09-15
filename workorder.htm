@@ -128,7 +128,7 @@
     td:nth-child(10), th:nth-child(10),
     td:nth-child(11), th:nth-child(11) {
       min-width: auto;
-      max-width: 120px; /* just enough for header */
+      max-width: 120px;
       white-space: nowrap;
     }
 
@@ -163,7 +163,7 @@
   <div id="message"></div>
 
   <div class="toolbar">
-    <input type="text" id="searchInput" placeholder="🔍 Search by UNIQUE NIT, NIT, Vendor..." oninput="filterTable()" />
+    <input type="text" id="searchInput" placeholder="🔍 Search..." oninput="filterTable()" />
     <button id="refreshBtn" onclick="refreshData()">⟳ Refresh</button>
   </div>
 
@@ -221,8 +221,9 @@
         for (let j = 0; j <= 10; j++) {
           let td = document.createElement("td");
 
-          if ((j === 8 || j === 9 || j === 10) && (!row[j] || row[j] === "")) {
-            td.innerHTML = `<input type="text" value="" id="col_${i}_${j}" oninput="toggleButton(${i})">`;
+          // Always make WORK ORDER columns editable
+          if (j === 8 || j === 9 || j === 10) {
+            td.innerHTML = `<input type="text" value="${row[j] || ""}" id="col_${i}_${j}" oninput="toggleButton(${i})">`;
           } else {
             td.textContent = row[j] ?? "";
           }
@@ -240,17 +241,17 @@
     }
 
     function filterTable() {
-  const search = document.getElementById("searchInput").value.toLowerCase();
-  const filtered = tableData.filter(row =>
-    (row[1] && row[1].toString().toLowerCase().includes(search)) || // UNIQUE NIT
-    (row[2] && row[2].toString().toLowerCase().includes(search)) || // NIT
-    (row[3] && row[3].toString().toLowerCase().includes(search)) || // SL
-    (row[4] && row[4].toString().toLowerCase().includes(search)) || // NIT DATE
-    (row[5] && row[5].toString().toLowerCase().includes(search)) || // VENDOR
-    (row[6] && row[6].toString().toLowerCase().includes(search))    // Name of the work
-  );
-  renderTable(filtered);
-}
+      const search = document.getElementById("searchInput").value.toLowerCase();
+      const filtered = tableData.filter(row =>
+        (row[1] && row[1].toString().toLowerCase().includes(search)) || // UNIQUE NIT
+        (row[2] && row[2].toString().toLowerCase().includes(search)) || // NIT
+        (row[3] && row[3].toString().toLowerCase().includes(search)) || // SL
+        (row[4] && row[4].toString().toLowerCase().includes(search)) || // NIT DATE
+        (row[5] && row[5].toString().toLowerCase().includes(search)) || // VENDOR
+        (row[6] && row[6].toString().toLowerCase().includes(search))    // Name of the work
+      );
+      renderTable(filtered);
+    }
 
     function toggleButton(i) {
       const btn = document.getElementById(`btn_${i}`);
@@ -306,4 +307,3 @@
   </script>
 </body>
 </html>
-
