@@ -71,7 +71,7 @@
       z-index: 5;
     }
     tr:hover td { background: rgba(255, 255, 255, 0.7); }
-    input, select, textarea {
+    input, select {
       width: 95%;
       padding: 6px;
       font-size: 13px;
@@ -79,6 +79,10 @@
       border-radius: 6px;
       text-align: center;
       background: rgba(255, 255, 255, 0.8);
+    }
+    input[readonly] {
+      background: rgba(230,230,230,0.8);
+      cursor: not-allowed;
     }
     .actions div { display: flex; gap: 6px; justify-content: center; }
     .actions button {
@@ -94,6 +98,10 @@
     .edit-btn { color: #FF9800; }
     .delete-btn { color: #E91E63; }
     .add-row { margin-top: 12px; color: #28a745; }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
   </style>
 </head>
 <body>
@@ -131,13 +139,17 @@
 </div>
 
 <script>
-  const endpoint = "https://script.google.com/macros/s/AKfycbyrh1j3X-PliPZnD-CFnSoVrv479w7YlqUIGH1Rte2QcCkAJc7QHSNdHRdTdwAq971h/exec"; // 🔗 Replace with WebApp URL
+  const endpoint = "https://script.google.com/macros/s/AKfycbyrh1j3X-PliPZnD-CFnSoVrv479w7YlqUIGH1Rte2QcCkAJc7QHSNdHRdTdwAq971h/exec"; 
+
+  let existingClubs = []; // store clubs from sheet
 
   async function refreshData() {
     const tbody = document.querySelector("#clubTable tbody");
     tbody.innerHTML = "";
     const res = await fetch(endpoint);
     const records = await res.json();
+
+    existingClubs = records.map(r => (r["Name of Club"] || "").trim().toLowerCase());
 
     if (!records.length) { addRow(); return; }
 
@@ -146,7 +158,7 @@
       tr.setAttribute("data-rowindex", data.rowIndex);
 
       tr.innerHTML = `
-        <td><input type="text" name="slno[]" value="${i+1}" readonly></td>
+        <td><input type="text" value="${i+1}" readonly></td>
         <td><input type="text" name="club[]" value="${data["Name of Club"]||""}"></td>
         <td><input type="text" name="village[]" value="${data["Village Name"]||""}"></td>
         <td><input type="text" name="sansad[]" value="${data["Sansad"]||""}"></td>
@@ -163,7 +175,7 @@
         <td><input type="text" name="contact[]" value="${data["Contact No"]||""}"></td>
         <td class="actions">
           <div>
-            <button type="button" class="save-btn" onclick="saveRow(this)">💾 Save</button>
+            <button type="button" class="save-btn" disabled>💾 Save</button>
             <button type="button" class="edit-btn" onclick="updateRow(this)">✏️ Update</button>
             <button type="button" class="delete-btn" onclick="deleteRow(this)">🗑️ Delete</button>
           </div>
@@ -178,7 +190,7 @@
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td><input type="text" value="${rowCount}" readonly></td>
-      <td><input type="text" name="club[]"></td>
+      <td><input type="text" name="club[]" oninput="toggleSaveButton(this)"></td>
       <td><input type="text" name="village[]"></td>
       <td><input type="text" name="sansad[]"></td>
       <td><input type="text" name="mouja[]"></td>
@@ -195,37 +207,40 @@
       <td class="actions">
         <div>
           <button type="button" class="save-btn" onclick="saveRow(this)">💾 Save</button>
-          <button type="button" class="edit-btn" onclick="updateRow(this)">✏️ Update</button>
+          <button type="button" class="edit-btn" disabled>✏️ Update</button>
           <button type="button" class="delete-btn" onclick="deleteRow(this)">🗑️ Delete</button>
         </div>
       </td>`;
     tbody.appendChild(tr);
   }
 
+  function toggleSaveButton(input) {
+    const clubName = input.value.trim().toLowerCase();
+    const row = input.closest("tr");
+    const saveBtn = row.querySelector(".save-btn");
+    if (existingClubs.includes(clubName) && clubName !== "") {
+      saveBtn.disabled = true;
+    } else {
+      saveBtn.disabled = false;
+    }
+  }
+
   async function saveRow(btn) {
-    btn.disabled = true;
-    btn.textContent = "💾 Saving...";
     const row = btn.closest("tr");
     const inputs = row.querySelectorAll("input, select");
     const formData = new FormData();
     formData.append("action", "save");
     inputs.forEach(el => formData.append(el.name.replace("[]",""), el.value));
-
-    try {
-      const res = await fetch(endpoint, { method: "POST", body: formData });
-      const text = await res.text();
-      btn.textContent = "✅ Saved";
-      row.setAttribute("data-rowindex", text); // backend should return rowIndex
-    } catch {
-      btn.textContent = "❌ Failed";
-    } finally {
-      setTimeout(() => { btn.textContent = "💾 Save"; btn.disabled = false; }, 2000);
-    }
+    btn.textContent = "⏳ Saving...";
+    btn.disabled = true;
+    const res = await fetch(endpoint, { method: "POST", body: formData });
+    const msg = await res.text();
+    btn.textContent = "✅ Saved";
+    alert(msg);
+    refreshData();
   }
 
   async function updateRow(btn) {
-    btn.disabled = true;
-    btn.textContent = "✏️ Updating...";
     const row = btn.closest("tr");
     const rowIndex = row.getAttribute("data-rowindex");
     const inputs = row.querySelectorAll("input, select");
@@ -233,35 +248,29 @@
     formData.append("action", "update");
     formData.append("rowIndex", rowIndex);
     inputs.forEach(el => formData.append(el.name.replace("[]",""), el.value));
-
-    try {
-      await fetch(endpoint, { method: "POST", body: formData });
-      btn.textContent = "✅ Updated";
-    } catch {
-      btn.textContent = "❌ Failed";
-    } finally {
-      setTimeout(() => { btn.textContent = "✏️ Update"; btn.disabled = false; }, 2000);
-    }
+    btn.textContent = "⏳ Updating...";
+    btn.disabled = true;
+    const res = await fetch(endpoint, { method: "POST", body: formData });
+    const msg = await res.text();
+    btn.textContent = "✅ Updated";
+    alert(msg);
+    refreshData();
   }
 
   async function deleteRow(btn) {
     if (!confirm("Delete this row?")) return;
-    btn.disabled = true;
-    btn.textContent = "🗑️ Deleting...";
     const row = btn.closest("tr");
     const rowIndex = row.getAttribute("data-rowindex");
     const formData = new FormData();
     formData.append("action", "delete");
     formData.append("rowIndex", rowIndex);
-
-    try {
-      await fetch(endpoint, { method: "POST", body: formData });
-      btn.textContent = "✅ Deleted";
-      setTimeout(() => row.remove(), 1000);
-    } catch {
-      btn.textContent = "❌ Failed";
-      btn.disabled = false;
-    }
+    btn.textContent = "⏳ Deleting...";
+    btn.disabled = true;
+    const res = await fetch(endpoint, { method: "POST", body: formData });
+    const msg = await res.text();
+    btn.textContent = "✅ Deleted";
+    alert(msg);
+    refreshData();
   }
 
   window.addEventListener("load", refreshData);
