@@ -114,7 +114,6 @@
       font-size: 12px;
     }
 
-    /* Name of the work column: half-width & wrap text */
     td:nth-child(7), th:nth-child(7) {
       width: 120px;
       max-width: 120px;
@@ -123,7 +122,6 @@
       overflow-wrap: break-word;
     }
 
-    /* Shrink columns to header text length */
     td:nth-child(9), th:nth-child(9),
     td:nth-child(10), th:nth-child(10),
     td:nth-child(11), th:nth-child(11) {
@@ -132,10 +130,10 @@
       white-space: nowrap;
     }
 
-    /* Row hover animation */
     tbody tr {
       transition: background-color 0.3s, transform 0.2s;
     }
+
     tbody tr:hover {
       background-color: #444;
       transform: scale(1.01);
@@ -190,7 +188,7 @@
   </div>
 
   <script>
-    const scriptURL = "https://script.google.com/macros/s/AKfycbyfZFBC1VTC_BLBZgzF51MPjvN8ipT-AZs-F9TrSzwFn3D45xIcnKQXugAmhrpMwZDx/exec"; 
+    const scriptURL = "https://script.google.com/macros/s/AKfycbxxbRpV8tXBR-HIy8epRUd4Lw8nNxC10dUsYjVes8MBgUvDbvIiGM27YdjDq0nliv0Q/exec";
     let tableData = [];
 
     async function refreshData() {
@@ -221,7 +219,6 @@
         for (let j = 0; j <= 10; j++) {
           let td = document.createElement("td");
 
-          // Always make WORK ORDER columns editable
           if (j === 8 || j === 9 || j === 10) {
             td.innerHTML = `<input type="text" value="${row[j] || ""}" id="col_${i}_${j}" oninput="toggleButton(${i})">`;
           } else {
@@ -243,12 +240,12 @@
     function filterTable() {
       const search = document.getElementById("searchInput").value.toLowerCase();
       const filtered = tableData.filter(row =>
-        (row[1] && row[1].toString().toLowerCase().includes(search)) || // UNIQUE NIT
-        (row[2] && row[2].toString().toLowerCase().includes(search)) || // NIT
-        (row[3] && row[3].toString().toLowerCase().includes(search)) || // SL
-        (row[4] && row[4].toString().toLowerCase().includes(search)) || // NIT DATE
-        (row[5] && row[5].toString().toLowerCase().includes(search)) || // VENDOR
-        (row[6] && row[6].toString().toLowerCase().includes(search))    // Name of the work
+        (row[1] && row[1].toString().toLowerCase().includes(search)) ||
+        (row[2] && row[2].toString().toLowerCase().includes(search)) ||
+        (row[3] && row[3].toString().toLowerCase().includes(search)) ||
+        (row[4] && row[4].toString().toLowerCase().includes(search)) ||
+        (row[5] && row[5].toString().toLowerCase().includes(search)) ||
+        (row[6] && row[6].toString().toLowerCase().includes(search))
       );
       renderTable(filtered);
     }
@@ -270,36 +267,46 @@
 
     async function updateRow(i) {
       const btn = document.getElementById(`btn_${i}`);
-      btn.disabled = true; btn.textContent = "Saving...";
+      btn.disabled = true;
+      btn.textContent = "Saving...";
 
       try {
         const formData = new FormData();
-        formData.append("action","updateBillPayment");
+        formData.append("action", "updateBillPayment");
         formData.append("rowIndex", i);
 
-        for (let j of [8,9,10]) {
+        for (let j of [8, 9, 10]) {
           const inputEl = document.getElementById(`col_${i}_${j}`);
-          if(inputEl) formData.append(`col${j}`, inputEl.value);
+          if (inputEl) formData.append(`col${j}`, inputEl.value);
         }
 
-        const res = await fetch(scriptURL,{method:"POST",body:formData});
+        const res = await fetch(scriptURL, { method: "POST", body: formData });
         const result = await res.json();
 
         if (result.success) {
-          btn.textContent = "Saved ✔"; btn.style.background = "green";
-          showMessage(`Row ${result.row} updated successfully ✅`,"success");
-          const rowEl = document.querySelector(`#btn_${i}`).closest("tr");
+          btn.textContent = "Saved ✔";
+          btn.style.background = "green";
+          showMessage(`Row ${result.row} updated successfully ✅`, "success");
+          const rowEl = btn.closest("tr");
           rowEl.style.backgroundColor = "#d4edda";
-          setTimeout(()=>{rowEl.style.backgroundColor=""; toggleButton(i);},1500);
+          setTimeout(() => {
+            rowEl.style.backgroundColor = "";
+            toggleButton(i);
+          }, 1500);
         } else {
-          btn.textContent = "Failed ✖"; btn.style.background = "red";
+          btn.textContent = "Failed ✖";
+          btn.style.background = "red";
           showMessage("Update failed: " + (result.error || "Unknown"), "error");
         }
       } catch (err) {
-        btn.textContent = "Error ✖"; btn.style.background = "red";
+        btn.textContent = "Error ✖";
+        btn.style.background = "red";
         showMessage("Network error: " + err.message, "error");
       } finally {
-        setTimeout(()=>{btn.disabled=false; toggleButton(i);},2000);
+        setTimeout(() => {
+          btn.disabled = false;
+          toggleButton(i);
+        }, 2000);
       }
     }
 
