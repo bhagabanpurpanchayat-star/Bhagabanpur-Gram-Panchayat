@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Bill Payment Module</title>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      background: #2b2b2b;
+      color: #eee;
+      font-size: 13px;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+    }
+
+    h2 {
+      color: #fff;
+      font-size: 18px;
+      margin: 10px;
+      text-align: center;
+    }
+
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+    }
+
+    .toolbar input {
+      padding: 4px;
+      border-radius: 4px;
+      border: 1px solid #555;
+      width: 250px;
+      font-size: 13px;
+    }
+
+    .toolbar button {
+      padding: 6px 12px;
+      background: #28a745;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+      font-size: 13px;
+    }
+
+    .toolbar button:hover { background: #218838; }
+
+    .spinner {
+      width: 14px;
+      height: 14px;
+      border: 2px solid #fff;
+      border-top: 2px solid transparent;
+      border-radius: 50%;
+      display: inline-block;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { from { transform: rotate(0deg);} to { transform: rotate(360deg);} }
+
+    #message {
+      margin: 0 10px 8px 10px;
+      padding: 8px;
+      display: none;
+      border-radius: 5px;
+      font-weight: bold;
+      text-align: center;
+      font-size: 13px;
+    }
+
+    #message.success { background: #28a745; color: white; }
+    #message.error { background: #dc3545; color: white; }
+    #message.loading { background: #007bff; color: white; }
+
+    .table-container {
+      flex: 1;
+      overflow-y: auto;
+      border: 1px solid #555;
+      margin: 0 10px 10px 10px;
+    }
+
+    table {
+      border-collapse: collapse;
+      font-size: 12px;
+      table-layout: auto;
+      width: 100%;
+      transition: all 0.3s ease;
+    }
+
+    th, td {
+      border: 1px solid #555;
+      padding: 6px;
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      transition: all 0.3s ease;
+    }
+
+    thead th {
+      position: sticky;
+      top: 0;
+      background: #003366;
+      color: #fff;
+      z-index: 2;
+      font-size: 12px;
+    }
+
+    /* Name of the work column: half-width & wrap text */
+    td:nth-child(7), th:nth-child(7) {
+      width: 120px;
+      max-width: 120px;
+      white-space: normal;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+    }
+
+    /* Shrink columns to header text length */
+    td:nth-child(9), th:nth-child(9),
+    td:nth-child(10), th:nth-child(10),
+    td:nth-child(11), th:nth-child(11) {
+      min-width: auto;
+      max-width: 120px; /* just enough for header */
+      white-space: nowrap;
+    }
+
+    /* Row hover animation */
+    tbody tr {
+      transition: background-color 0.3s, transform 0.2s;
+    }
+    tbody tr:hover {
+      background-color: #444;
+      transform: scale(1.01);
+    }
+
+    button.action-btn {
+      padding: 4px 8px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: background 0.3s ease;
+    }
+
+    td input {
+      width: 100%;
+      box-sizing: border-box;
+      font-size: 12px;
+      padding: 4px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Bill Payment Module</h2>
+  <div id="message"></div>
+
+  <div class="toolbar">
+    <input type="text" id="searchInput" placeholder="🔍 Search by UNIQUE NIT, NIT, Vendor..." oninput="filterTable()" />
+    <button id="refreshBtn" onclick="refreshData()">⟳ Refresh</button>
+  </div>
+
+  <div class="table-container">
+    <table id="dataTable">
+      <thead>
+        <tr>
+          <th>Timestamp</th>
+          <th>UNIQUE NIT</th>
+          <th>NIT</th>
+          <th>SL</th>
+          <th>NIT DATE</th>
+          <th>VENDOR</th>
+          <th>Name of the work</th>
+          <th>Source of Fund</th>
+          <th>WORK ORDER NO</th>
+          <th>WORK ORDER DATE</th>
+          <th>ESTIMATE VALUE</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <script>
+    const scriptURL = "https://script.google.com/macros/s/AKfycbyfZFBC1VTC_BLBZgzF51MPjvN8ipT-AZs-F9TrSzwFn3D45xIcnKQXugAmhrpMwZDx/exec"; 
+    let tableData = [];
+
+    async function refreshData() {
+      const btn = document.getElementById("refreshBtn");
+      const oldText = btn.innerHTML;
+      btn.innerHTML = `<span class="spinner"></span> Refreshing...`;
+      btn.disabled = true;
+      showMessage("Refreshing data...", "loading");
+      await loadData();
+      btn.innerHTML = oldText;
+      btn.disabled = false;
+      showMessage("Data loaded successfully ✅", "success");
+    }
+
+    async function loadData() {
+      const res = await fetch(scriptURL + "?action=getBillPaymentData");
+      tableData = await res.json();
+      renderTable(tableData);
+    }
+
+    function renderTable(data) {
+      const tbody = document.querySelector("#dataTable tbody");
+      tbody.innerHTML = "";
+
+      data.forEach((row, i) => {
+        let tr = document.createElement("tr");
+
+        for (let j = 0; j <= 10; j++) {
+          let td = document.createElement("td");
+
+          if ((j === 8 || j === 9 || j === 10) && (!row[j] || row[j] === "")) {
+            td.innerHTML = `<input type="text" value="" id="col_${i}_${j}" oninput="toggleButton(${i})">`;
+          } else {
+            td.textContent = row[j] ?? "";
+          }
+
+          tr.appendChild(td);
+        }
+
+        let tdAction = document.createElement("td");
+        tdAction.innerHTML = `<button class="action-btn" id="btn_${i}" onclick="updateRow(${i})">SAVE</button>`;
+        tr.appendChild(tdAction);
+
+        tbody.appendChild(tr);
+        toggleButton(i);
+      });
+    }
+
+    function filterTable() {
+  const search = document.getElementById("searchInput").value.toLowerCase();
+  const filtered = tableData.filter(row =>
+    (row[1] && row[1].toString().toLowerCase().includes(search)) || // UNIQUE NIT
+    (row[2] && row[2].toString().toLowerCase().includes(search)) || // NIT
+    (row[3] && row[3].toString().toLowerCase().includes(search)) || // SL
+    (row[4] && row[4].toString().toLowerCase().includes(search)) || // NIT DATE
+    (row[5] && row[5].toString().toLowerCase().includes(search)) || // VENDOR
+    (row[6] && row[6].toString().toLowerCase().includes(search))    // Name of the work
+  );
+  renderTable(filtered);
+}
+
+    function toggleButton(i) {
+      const btn = document.getElementById(`btn_${i}`);
+      btn.textContent = "UPDATE";
+      btn.style.background = "blue";
+      btn.style.color = "white";
+    }
+
+    function showMessage(text, type) {
+      const msg = document.getElementById("message");
+      msg.textContent = text;
+      msg.className = type;
+      msg.style.display = "block";
+      setTimeout(() => { msg.style.display = "none"; }, 2500);
+    }
+
+    async function updateRow(i) {
+      const btn = document.getElementById(`btn_${i}`);
+      btn.disabled = true; btn.textContent = "Saving...";
+
+      try {
+        const formData = new FormData();
+        formData.append("action","updateBillPayment");
+        formData.append("rowIndex", i);
+
+        for (let j of [8,9,10]) {
+          const inputEl = document.getElementById(`col_${i}_${j}`);
+          if(inputEl) formData.append(`col${j}`, inputEl.value);
+        }
+
+        const res = await fetch(scriptURL,{method:"POST",body:formData});
+        const result = await res.json();
+
+        if (result.success) {
+          btn.textContent = "Saved ✔"; btn.style.background = "green";
+          showMessage(`Row ${result.row} updated successfully ✅`,"success");
+          const rowEl = document.querySelector(`#btn_${i}`).closest("tr");
+          rowEl.style.backgroundColor = "#d4edda";
+          setTimeout(()=>{rowEl.style.backgroundColor=""; toggleButton(i);},1500);
+        } else {
+          btn.textContent = "Failed ✖"; btn.style.background = "red";
+          showMessage("Update failed: " + (result.error || "Unknown"), "error");
+        }
+      } catch (err) {
+        btn.textContent = "Error ✖"; btn.style.background = "red";
+        showMessage("Network error: " + err.message, "error");
+      } finally {
+        setTimeout(()=>{btn.disabled=false; toggleButton(i);},2000);
+      }
+    }
+
+    loadData();
+  </script>
+</body>
+</html>
