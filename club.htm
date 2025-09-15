@@ -203,17 +203,29 @@
   }
 
   async function saveRow(btn) {
+    btn.disabled = true;
+    btn.textContent = "💾 Saving...";
     const row = btn.closest("tr");
     const inputs = row.querySelectorAll("input, select");
     const formData = new FormData();
     formData.append("action", "save");
     inputs.forEach(el => formData.append(el.name.replace("[]",""), el.value));
-    const res = await fetch(endpoint, { method: "POST", body: formData });
-    alert(await res.text());
-    refreshData();
+
+    try {
+      const res = await fetch(endpoint, { method: "POST", body: formData });
+      const text = await res.text();
+      btn.textContent = "✅ Saved";
+      row.setAttribute("data-rowindex", text); // backend should return rowIndex
+    } catch {
+      btn.textContent = "❌ Failed";
+    } finally {
+      setTimeout(() => { btn.textContent = "💾 Save"; btn.disabled = false; }, 2000);
+    }
   }
 
   async function updateRow(btn) {
+    btn.disabled = true;
+    btn.textContent = "✏️ Updating...";
     const row = btn.closest("tr");
     const rowIndex = row.getAttribute("data-rowindex");
     const inputs = row.querySelectorAll("input, select");
@@ -221,21 +233,35 @@
     formData.append("action", "update");
     formData.append("rowIndex", rowIndex);
     inputs.forEach(el => formData.append(el.name.replace("[]",""), el.value));
-    const res = await fetch(endpoint, { method: "POST", body: formData });
-    alert(await res.text());
-    refreshData();
+
+    try {
+      await fetch(endpoint, { method: "POST", body: formData });
+      btn.textContent = "✅ Updated";
+    } catch {
+      btn.textContent = "❌ Failed";
+    } finally {
+      setTimeout(() => { btn.textContent = "✏️ Update"; btn.disabled = false; }, 2000);
+    }
   }
 
   async function deleteRow(btn) {
     if (!confirm("Delete this row?")) return;
+    btn.disabled = true;
+    btn.textContent = "🗑️ Deleting...";
     const row = btn.closest("tr");
     const rowIndex = row.getAttribute("data-rowindex");
     const formData = new FormData();
     formData.append("action", "delete");
     formData.append("rowIndex", rowIndex);
-    const res = await fetch(endpoint, { method: "POST", body: formData });
-    alert(await res.text());
-    refreshData();
+
+    try {
+      await fetch(endpoint, { method: "POST", body: formData });
+      btn.textContent = "✅ Deleted";
+      setTimeout(() => row.remove(), 1000);
+    } catch {
+      btn.textContent = "❌ Failed";
+      btn.disabled = false;
+    }
   }
 
   window.addEventListener("load", refreshData);
