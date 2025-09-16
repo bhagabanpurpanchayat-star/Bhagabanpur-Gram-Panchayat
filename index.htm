@@ -182,7 +182,7 @@
       if(theme==="dark"){document.documentElement.style.setProperty("--navbar-bg","linear-gradient(270deg,#666,#222,#111)");document.documentElement.style.setProperty("--sidebar-bg","linear-gradient(270deg,#333,#111,#000)");document.documentElement.style.setProperty("--sidebar-hover","linear-gradient(270deg,#444,#222,#111)");}
       if(theme==="grey"){document.documentElement.style.setProperty("--navbar-bg","linear-gradient(270deg,#bbb,#555,#222)");document.documentElement.style.setProperty("--sidebar-bg","linear-gradient(270deg,#666,#444,#222)");document.documentElement.style.setProperty("--sidebar-hover","linear-gradient(270deg,#888,#555,#333)");}
     }
-    const API_URL="https://script.google.com/macros/s/AKfycbyQHR3YpftGsAK1ElSDiN8oNHLbtJtvyxFe93a3MG91RDUD-Qwz1mJOV2WoDbZebYTe/exec";
+    const API_URL="https://script.google.com/macros/s/AKfycbwpHAQehjQOxo0toxqtAvU_6ROIOIjDwM8MyZ7cUDJgcsRvBOqOLGYp2GBfMF3kk5NnQQ/exec";
     async function loadHeadlines(){try{const res=await fetch(API_URL);const headlines=await res.json();if(!headlines.length){setTracks(["<span>No headlines found</span>"]);return;}const items=headlines.map(h=>h.link?`<span><a href="${h.link}" target="_blank" style="color:var(--news-text);text-decoration:none">${escapeHtml(h.title)}</a></span>`:`<span>${escapeHtml(h.title)}</span>`);const joined=items.join('<span> • </span>');setTracks([joined,joined]);}catch(err){console.error(err);setTracks(["<span>Failed to load</span>"]);}}
     function setTracks(arr){document.getElementById("track1").innerHTML=arr[0];document.getElementById("track2").innerHTML=arr[1];}
     function escapeHtml(s){return s.replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));}
