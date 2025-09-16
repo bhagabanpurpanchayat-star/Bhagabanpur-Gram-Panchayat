@@ -233,6 +233,24 @@
     .highlight {
       animation: rowHighlight 1s ease-out;
     }
+
+    /* Save Button Pulse Animation */
+    .pulse {
+      animation: pulseBtn 1s infinite;
+    }
+    @keyframes pulseBtn {
+      0% { transform: scale(1); box-shadow: 0 0 8px var(--neon-blue); }
+      50% { transform: scale(1.05); box-shadow: 0 0 16px var(--neon-blue); }
+      100% { transform: scale(1); box-shadow: 0 0 8px var(--neon-blue); }
+    }
+
+    /* Save status next to button */
+    .save-status {
+      margin-left:12px;
+      font-weight:700;
+      color: var(--neon-blue);
+      vertical-align: middle;
+    }
   </style>
 </head>
 <body>
@@ -248,7 +266,6 @@
           <div class="field"><label>NIT Date</label><input type="date" name="date"/></div>
         </div>
 
-        <!-- Search Section -->
         <h3>Select Work from Action Plan</h3>
         <input type="text" id="searchBox" placeholder="Search by Activity ID, Work Name, or Both..." />
         <div class="sheet-table-container">
@@ -267,10 +284,8 @@
         </div>
         <button id="insertBtn" type="button">Insert</button>
 
-        <!-- Scheme Count Badge -->
         <div id="schemeCount">Scheme Count: 0</div>
 
-        <!-- Inserted Schemes Table -->
         <div class="schemes">
           <table>
             <thead>
@@ -289,18 +304,18 @@
           </table>
         </div>
 
-        <div style="margin-top:12px;">
+        <div style="margin-top:12px; display:flex; align-items:center;">
           <button type="submit" class="btn primary">Save & Update</button>
+          <span id="saveStatus" class="save-status"></span>
         </div>
       </form>
     </div>
   </main>
 
-  <!-- Success sound -->
   <audio id="successSound" preload="auto" src="https://assets.mixkit.co/sfx/preview/mixkit-correct-answer-tone-2870.mp3"></audio>
 
   <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbzt7Iaz9cHFtdBuIwELqtZKwKCpr1kwEkFcQDOGuvVKUu3XDUbclimiNcB3ppYuwfhpew/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbx5AYwKc97LoqmRpTDiYOaUDDA5pUHonkZ5sXkdzRM6KbgEjka-wrseujp7QY9SvQm7Dg/exec"; // ◀︎ replace with your deployed Apps Script Web App URL
 
     const sheetDataBody = document.getElementById("sheetData");
     const schemesBody = document.getElementById("schemesBody");
@@ -308,18 +323,16 @@
     const searchBox = document.getElementById("searchBox");
     const schemeCount = document.getElementById("schemeCount");
     const successSound = document.getElementById("successSound");
+    const saveStatus = document.getElementById("saveStatus");
 
-    // selected set keeps actId strings (robust equality)
     const selectedActIds = new Set();
-    const sheetDataMap = new Map(); // actId -> row object (for quick lookup)
+    const sheetDataMap = new Map();
     let sheetData = [];
 
-    // Load Data from Google Sheets
     async function fetchAndLoad() {
       try {
         const res = await fetch(API_URL);
         sheetData = await res.json();
-        // prepare map (use string keys trimmed)
         sheetDataMap.clear();
         sheetData.forEach(r => {
           const key = String(r.actId ?? "").trim();
@@ -329,11 +342,9 @@
         loadData(sheetData);
       } catch (err) {
         console.error("Failed to fetch sheet data:", err);
-        // still allow user to work with empty list
       }
     }
 
-    // Populate the right-side table
     function loadData(data) {
       sheetDataBody.innerHTML = "";
       data.forEach(row => {
@@ -347,40 +358,28 @@
           <td>${escapeHtml(String(row.fund ?? ""))}</td>
           <td>${escapeHtml(String(row.tendered ?? ""))}</td>
         `;
-
-        // Single click toggles selection
-        tr.addEventListener("click", (e) => {
-          toggleRowSelection(actId, tr);
-        });
-
-        // Double click directly inserts that row (robust: reads dataset, uses map)
-        tr.addEventListener("dblclick", (e) => {
-          // insert the clicked row immediately (no need to select first)
+        tr.addEventListener("click", () => toggleRowSelection(actId, tr));
+        tr.addEventListener("dblclick", () => {
           const rowObj = sheetDataMap.get(actId);
           if (rowObj) {
             insertRowsByActIds([actId]);
-            // clear visual selection for that row if it was selected
             selectedActIds.delete(actId);
             tr.classList.remove("selected");
             updateInsertBtn();
           }
         });
-
         sheetDataBody.appendChild(tr);
       });
     }
 
-    // Utility to escape HTML text inserted into innerHTML templates
     function escapeHtml(text) {
-      return text
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
+      return text.replace(/&/g, "&amp;")
+                 .replace(/</g, "&lt;")
+                 .replace(/>/g, "&gt;")
+                 .replace(/"/g, "&quot;")
+                 .replace(/'/g, "&#039;");
     }
 
-    // toggle selection set and style
     function toggleRowSelection(actId, trElement) {
       if (!actId) return;
       if (selectedActIds.has(actId)) {
@@ -399,12 +398,10 @@
       insertBtn.classList.toggle("active", has);
     }
 
-    // Insert button: insert all selected rows (multi-insert)
-    insertBtn.addEventListener("click", (e) => {
+    insertBtn.addEventListener("click", () => {
       const ids = Array.from(selectedActIds);
       if (ids.length === 0) return;
       insertRowsByActIds(ids);
-      // clear selection visuals for those IDs
       document.querySelectorAll('.sheet-table tbody tr').forEach(tr => {
         const id = tr.dataset.actid;
         if (selectedActIds.has(id)) tr.classList.remove('selected');
@@ -413,18 +410,14 @@
       updateInsertBtn();
     });
 
-    // Core insertion function: accepts array of actIds (strings)
     function insertRowsByActIds(actIds) {
       if (!Array.isArray(actIds) || actIds.length === 0) return;
-
       const duplicateNames = [];
       let insertedAny = false;
 
       actIds.forEach(actId => {
         const row = sheetDataMap.get(actId);
-        if (!row) return; // skip if not found
-
-        // Check duplicate by actId OR work name present in schemesBody
+        if (!row) return;
         const workName = String(row.work ?? "").trim();
         let isDuplicate = false;
         for (const existingTr of schemesBody.querySelectorAll("tr")) {
@@ -435,13 +428,10 @@
             break;
           }
         }
-
         if (isDuplicate) {
           duplicateNames.push(workName || actId);
           return;
         }
-
-        // Build new row and append to schemesBody
         const newTr = document.createElement("tr");
         newTr.classList.add("highlight");
         newTr.innerHTML = `
@@ -455,45 +445,36 @@
           <td><button type="button" class="btn danger" onclick="this.closest('tr').remove(); updateSchemeCount();">Exclude</button></td>
         `;
         schemesBody.appendChild(newTr);
-
-        // remove highlight class after animation completes (1s)
         setTimeout(() => newTr.classList.remove('highlight'), 1000);
-
         insertedAny = true;
       });
 
-      // Play success sound only if at least one row was actually appended
       if (insertedAny) {
-        // reset and attempt to play - browsers require user gesture (we are in click/dblclick handler)
         try {
           successSound.currentTime = 0;
           const p = successSound.play();
-          if (p && p.then) p.catch(()=>{/* play blocked or failed; ignore gracefully */});
-        } catch (err) {
-          // ignore any play errors
-          console.warn("Sound play failed:", err);
-        }
+          if (p && p.then) p.catch(()=>{});
+        } catch (err) {}
       }
-
-      // If duplicates were found, show popup listing their work names
       if (duplicateNames.length > 0) {
         const uniq = Array.from(new Set(duplicateNames));
-        alert("⚠️ The following works were already added and were skipped:\n\n" + uniq.join("\n"));
+        alert("⚠️ Already added, skipped:\n\n" + uniq.join("\n"));
       }
-
       updateSchemeCount();
     }
 
-    // small helper to escape attribute values (single-quoted)
     function escapeAttr(s) {
-      return String(s ?? "").replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/'/g, "&#039;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      return String(s ?? "").replace(/&/g, "&amp;")
+                            .replace(/"/g, "&quot;")
+                            .replace(/'/g, "&#039;")
+                            .replace(/</g, "&lt;")
+                            .replace(/>/g, "&gt;");
     }
 
     function updateSchemeCount() {
       schemeCount.textContent = `Scheme Count: ${schemesBody.querySelectorAll("tr").length}`;
     }
 
-    // Search Filter (supports text + numbers)
     searchBox.addEventListener("input", () => {
       const query = searchBox.value.toLowerCase().trim();
       if (!query) {
@@ -508,9 +489,143 @@
       loadData(filtered);
     });
 
-    // initial load
     window.addEventListener("load", fetchAndLoad);
+
+    // -------------------------
+    // Save handler (per-row, shows X/Y progress)
+    // -------------------------
+    document.getElementById("nitForm").addEventListener("submit", async function(e) {
+      e.preventDefault();
+      const form = this;
+      const saveBtn = form.querySelector(".btn.primary");
+
+      // collect formdata once
+      const fd = new FormData(form);
+      const actids   = fd.getAll("actid[]");
+      const works    = fd.getAll("work[]");
+      const sites    = fd.getAll("site[]");
+      const funds    = fd.getAll("fund[]");
+      const tendered = fd.getAll("tendered[]");
+      const formprices = fd.getAll("formprice[]");
+      const earnests = fd.getAll("earnest[]");
+
+      if (actids.length === 0) {
+        alert("No schemes selected to save.");
+        return;
+      }
+
+      // maximum guard
+      if (actids.length > 250) {
+        alert("You can save up to 250 schemes at a time. Please reduce selection.");
+        return;
+      }
+
+      // UI start
+      saveBtn.disabled = true;
+      saveBtn.textContent = "Saving...";
+      saveBtn.classList.add("pulse");
+      saveStatus.textContent = `0/${actids.length}`;
+
+      try {
+        // Duplicate check against NIT sheet
+        const existingRes = await fetch(API_URL + "?check=1");
+        const existing = await existingRes.json();
+        const existingIds = new Set(existing.map(r => String(r.actId ?? "").trim()).filter(x => x !== ""));
+        const existingWorks = new Set(existing.map(r => String(r.work ?? "").trim().toLowerCase()).filter(x => x !== ""));
+
+        // Also check duplicates within the selected batch
+        const seenIds = new Set();
+        const seenWorks = new Set();
+        const foundDup = [];
+
+        for (let i = 0; i < actids.length; i++) {
+          const id = String(actids[i] || "").trim();
+          const work = String(works[i] || "").trim();
+          if ((id && existingIds.has(id)) || (work && existingWorks.has(work.toLowerCase()))) {
+            foundDup.push(work || id);
+          }
+          if (id && seenIds.has(id)) {
+            foundDup.push((work || id) + " (duplicate in selection)");
+          }
+          if (work && seenWorks.has(work.toLowerCase())) {
+            foundDup.push(work + " (duplicate in selection)");
+          }
+          if (id) seenIds.add(id);
+          if (work) seenWorks.add(work.toLowerCase());
+        }
+
+        if (foundDup.length > 0) {
+          alert("⚠️ Duplicate entries found (sheet or within selection):\n\n" + Array.from(new Set(foundDup)).join("\n"));
+          saveBtn.disabled = false;
+          saveBtn.textContent = "Save & Update";
+          saveBtn.classList.remove("pulse");
+          saveStatus.textContent = "";
+          return;
+        }
+
+        // Send each row sequentially and update progress
+        for (let i = 0; i < actids.length; i++) {
+          const params = new URLSearchParams();
+
+          // meta fields (single)
+          params.append("fyear", fd.get("fyear") || "");
+          params.append("memo", fd.get("memo") || "");
+          params.append("memodate", fd.get("memodate") || "");
+          params.append("nit", fd.get("nit") || "");
+          params.append("date", fd.get("date") || "");
+
+          // scheme-specific fields — send as actid[] etc (one value each request)
+          params.append("actid[]", actids[i] || "");
+          params.append("work[]", works[i] || "");
+          params.append("site[]", sites[i] || "");
+          params.append("fund[]", funds[i] || "");
+          params.append("tendered[]", tendered[i] || "");
+          params.append("formprice[]", formprices[i] || "");
+          params.append("earnest[]", earnests[i] || "");
+
+          const resp = await fetch(API_URL, {
+            method: "POST",
+            body: params.toString(),
+            headers: { "Content-Type": "application/x-www-form-urlencoded" }
+          });
+
+          const json = await resp.json();
+          if (!json || json.result !== "success") {
+            const msg = (json && json.message) ? json.message : "Unknown server error";
+            alert("Failed to save row " + (i + 1) + ": " + msg);
+            saveBtn.disabled = false;
+            saveBtn.textContent = "Save & Update";
+            saveBtn.classList.remove("pulse");
+            saveStatus.textContent = "";
+            return;
+          }
+
+          // update status
+          saveStatus.textContent = `${i + 1}/${actids.length}`;
+        }
+
+        // finished all rows
+        saveBtn.textContent = "Saved ✅";
+        setTimeout(() => {
+          saveBtn.disabled = false;
+          saveBtn.textContent = "Save & Update";
+          saveBtn.classList.remove("pulse");
+          saveStatus.textContent = "";
+        }, 1200);
+
+        alert(`✅ Successfully saved ${actids.length} scheme(s).`);
+        form.reset();
+        schemesBody.innerHTML = "";
+        updateSchemeCount();
+
+      } catch (err) {
+        alert("❌ Failed to save: " + err.message);
+        saveBtn.disabled = false;
+        saveBtn.textContent = "Save & Update";
+        saveBtn.classList.remove("pulse");
+        saveStatus.textContent = "";
+      }
+    });
   </script>
 </body>
 </html>
-
