@@ -47,12 +47,22 @@
     button.action-btn { padding: 6px 14px; border: none; border-radius: 6px; color: #fff; cursor: pointer; font-size: 13px; font-weight: bold; }
     .btn-save { background: green; }
     .btn-update { background: orange; }
+
+    /* Extraction Progress Popup */
+    #progressPopup { display:none; position:fixed; top:0; left:0; width:100%; height:100%; 
+      background:rgba(0,0,0,0.3); z-index:9999; align-items:center; justify-content:center; }
+    #progressPopup div { background:#28a745; color:#fff; padding:20px 30px; border-radius:12px; 
+      box-shadow:0 2px 10px rgba(0,0,0,0.25); font-size:15px; font-weight:500; text-align:center; animation:popIn 0.3s ease; }
+    @keyframes popIn { from {transform:scale(0.9);opacity:0;} to{transform:scale(1);opacity:1;} }
+    .blink { animation: blinkAnim 1s infinite; }
+    @keyframes blinkAnim { 50%{opacity:0.4;} }
   </style>
 </head>
 <body>
   <h2>Sale of Tender Form</h2>
 
   <div id="message"></div>
+  <div id="progressPopup"><div><span id="progressMessage">Processing...</span></div></div>
 
   <div class="toolbar">
     <input id="searchInput" type="text" placeholder="🔍 Search..." oninput="filterTable()" />
@@ -86,16 +96,11 @@
   </table>
 
   <script>
-    const scriptURL = "https://script.google.com/macros/s/AKfycbzXQXHSKgoNtTiOvh2d7ZlfhSAcSdE9kHDvphCI-dp9EDlX7ABcK83IxBWWVzRCfcmdzA/exec"; 
+    const scriptURL = "https://script.google.com/macros/s/AKfycbzh3IkxgK96ao8dIm5qHuBBHS59XkPtmiOJe4PrpalSSzF5gYK51J3WTFEUy4P-saD6Iw/exec"; 
     let tableData = [];
     let vendorOptions = [];
 
-    function valueToString(v) {
-      if (v === null || v === undefined) return "";
-      if (typeof v === "string") return v;
-      if (typeof v === "number") return String(v);
-      try { return String(v); } catch { return ""; }
-    }
+    function valueToString(v) { if(v===null||v===undefined) return ""; if(typeof v==="string") return v; if(typeof v==="number") return String(v); try{ return String(v); }catch{return "";}}
 
     async function refreshData() {
       const btn = document.getElementById("refreshBtn");
@@ -103,185 +108,106 @@
       btn.innerHTML = `<span class="spinner"></span> Refreshing...`;
       btn.disabled = true;
       showMessage("Refreshing data...", "loading");
-      try {
-        await loadData();
-        showMessage("Data refreshed ✅", "success");
-      } catch (err) {
-        showMessage("Refresh failed: " + err.message, "error");
-      } finally {
-        btn.innerHTML = oldHTML;
-        btn.disabled = false;
-      }
+      try { await loadData(); showMessage("Data refreshed ✅", "success"); }
+      catch(err){ showMessage("Refresh failed: "+err.message,"error"); }
+      finally{ btn.innerHTML = oldHTML; btn.disabled=false; }
     }
 
     async function loadData() {
-      const [vRes, tRes] = await Promise.all([
-        fetch(scriptURL + "?action=getVendors"),
-        fetch(scriptURL + "?action=getTenderData")
-      ]);
+      const [vRes,tRes] = await Promise.all([fetch(scriptURL+"?action=getVendors"),fetch(scriptURL+"?action=getTenderData")]);
       vendorOptions = await vRes.json();
       tableData = await tRes.json();
       renderTable(tableData);
     }
 
-    function formatTimestamp(raw) {
-      if (!raw) return "";
-      let d = new Date(raw);
-      if (!isNaN(d)) return d.toLocaleString("en-US", { hour12: false });
-      return raw;
-    }
+    function formatTimestamp(raw){ if(!raw) return ""; let d=new Date(raw); if(!isNaN(d)) return d.toLocaleString("en-US",{hour12:false}); return raw; }
+    function formatDate(raw){ if(!raw) return ""; let d=new Date(raw); if(!isNaN(d)) return d.toLocaleDateString("en-GB"); return raw; }
 
-    function formatDate(raw) {
-      if (!raw) return "";
-      let d = new Date(raw);
-      if (!isNaN(d)) return d.toLocaleDateString("en-GB");
-      return raw;
-    }
+    function showPopup(msg, blink=false){ const el=document.getElementById("progressMessage"); el.innerText=msg; if(blink) el.classList.add("blink"); else el.classList.remove("blink"); document.getElementById("progressPopup").style.display="flex"; }
+    function hidePopup(){ document.getElementById("progressPopup").style.display="none"; }
 
-    function renderTable(data) {
+    function renderTable(data){
       const tbody = document.querySelector("#dataTable tbody");
       tbody.innerHTML = "";
 
-      data.forEach((row, idx) => {
+      data.forEach((row, idx)=>{
         const tr = document.createElement("tr");
+        const timeStamp=formatTimestamp(row[0]), finYear=valueToString(row[1]), nitNo=valueToString(row[4]), nitDate=formatDate(row[5]), slNo=valueToString(row[6]), uniqueNIT=valueToString(row[7]), activityId=valueToString(row[8]), workName=valueToString(row[9]), siteDetails=valueToString(row[10]), fund=valueToString(row[11]), tenderAmt=valueToString(row[12]), formPrice=valueToString(row[13]), earnest=valueToString(row[14]), vendorsArr=valueToString(row[15]).split(",").map(s=>s.trim()).filter(s=>s);
 
-        const timeStamp   = formatTimestamp(row[0]); // Timestamp
-        const finYear     = valueToString(row[1]);   // Financial Year
-        // row[2] = Memo No (skip, not in HTML)
-        const nitNo       = valueToString(row[4]);   // NIT No
-        const nitDate     = formatDate(row[5]);      // NIT Date
-        const slNo        = valueToString(row[6]);   // Sl No.
-        const uniqueNIT   = valueToString(row[7]);   // UNIQUE NIT (from sheet)
-        const activityId  = valueToString(row[8]);   // Activity ID
-        const workName    = valueToString(row[9]);   // Name of work
-        const siteDetails = valueToString(row[10]);  // Site details
-        const fund        = valueToString(row[11]);  // Source of Fund
-        const tenderAmt   = valueToString(row[12]);  // Tendered Amount
-        const formPrice   = valueToString(row[13]);  // Tender Form Price
-        const earnest     = valueToString(row[14]);  // Earnest Money
-        const vendorsArr  = valueToString(row[15]).split(",").map(s => s.trim()).filter(s => s);
+        [timeStamp,finYear,uniqueNIT,nitNo,nitDate,slNo,activityId,workName,siteDetails,fund,tenderAmt,formPrice,earnest].forEach(val=>{const td=document.createElement("td"); td.textContent=val; tr.appendChild(td);});
 
-        [timeStamp, finYear, uniqueNIT, nitNo, nitDate, slNo, activityId, workName,
-          siteDetails, fund, tenderAmt, formPrice, earnest].forEach(val => {
-          const td = document.createElement("td");
-          td.textContent = val;
-          tr.appendChild(td);
-        });
-
-        // Vendors
-        const tdVendor = document.createElement("td");
-        if (vendorsArr.length > 0) {
-          const container = document.createElement("div");
-          container.className = "vendor-list";
-          vendorsArr.forEach(v => {
-            const span = document.createElement("span");
-            span.className = "vendor-tag";
-            span.textContent = v;
-            container.appendChild(span);
-          });
-          tdVendor.appendChild(container);
-        } else {
-          const select = createVendorSelect([], idx);
-          tdVendor.appendChild(select);
-        }
+        const tdVendor=document.createElement("td");
+        if(vendorsArr.length>0){
+          const container=document.createElement("div"); container.className="vendor-list"; vendorsArr.forEach(v=>{const span=document.createElement("span"); span.className="vendor-tag"; span.textContent=v; container.appendChild(span);}); tdVendor.appendChild(container);
+        } else { tdVendor.appendChild(createVendorSelect([],idx)); }
         tr.appendChild(tdVendor);
 
-        // Action
-        const tdAction = document.createElement("td");
-        const btn = document.createElement("button");
-        btn.classList.add("action-btn");
-        if (vendorsArr.length === 0) {
-          btn.textContent = "Save";
-          btn.classList.add("btn-save");
-          btn.onclick = () => handleSave(idx, tdVendor, btn);
-        } else {
-          btn.textContent = "Update";
-          btn.classList.add("btn-update");
-          btn.onclick = () => switchToEditable(vendorsArr, idx, tdVendor, btn);
-        }
-        tdAction.appendChild(btn);
-        tr.appendChild(tdAction);
-
+        const tdAction=document.createElement("td");
+        const btn=document.createElement("button"); btn.classList.add("action-btn");
+        if(vendorsArr.length===0){ btn.textContent="Save"; btn.classList.add("btn-save"); btn.onclick=()=>handleSave(idx,tdVendor,btn);}
+        else{ btn.textContent="Update"; btn.classList.add("btn-update"); btn.onclick=()=>switchToEditable(vendorsArr,idx,tdVendor,btn);}
+        tdAction.appendChild(btn); tr.appendChild(tdAction);
         tbody.appendChild(tr);
       });
     }
 
-    function createVendorSelect(selectedVendors, rowIndex) {
-      const select = document.createElement("select");
-      select.multiple = true;
-      vendorOptions.forEach(opt => {
-        const option = document.createElement("option");
-        option.value = opt;
-        option.textContent = opt;
-        if (selectedVendors.includes(opt)) option.selected = true;
-        select.appendChild(option);
-      });
-      new Choices(select, { removeItemButton: true, searchEnabled: true });
+    function createVendorSelect(selectedVendors,rowIndex){
+      const select=document.createElement("select"); select.multiple=true;
+      vendorOptions.forEach(opt=>{const option=document.createElement("option"); option.value=opt; option.textContent=opt; if(selectedVendors.includes(opt)) option.selected=true; select.appendChild(option); });
+      new Choices(select,{removeItemButton:true, searchEnabled:true});
       return select;
     }
 
-    async function handleSave(idx, tdVendor, btn) {
-      const select = tdVendor.querySelector("select");
-      if (!select) return;
-      const chosen = Array.from(select.selectedOptions).map(o => o.value);
-      if (chosen.length < 3) { alert("⚠ Please select at least 3 vendors."); return; }
-      await saveVendors(idx, chosen, btn, tdVendor);
+    async function handleSave(idx,tdVendor,btn){
+      const select=tdVendor.querySelector("select"); if(!select) return;
+      const chosen=Array.from(select.selectedOptions).map(o => o.value);
+      if(chosen.length<3){ alert("⚠ Please select at least 3 vendors."); return; }
+      await saveVendors(idx,chosen,btn,tdVendor);
     }
 
-    function switchToEditable(currentVendors, idx, tdVendor, btn) {
-      tdVendor.innerHTML = "";
-      const select = createVendorSelect(currentVendors, idx);
-      tdVendor.appendChild(select);
-      btn.textContent = "Update";
-      btn.classList.add("btn-update");
-      btn.onclick = () => handleSave(idx, tdVendor, btn);
+    function switchToEditable(currentVendors,idx,tdVendor,btn){
+      tdVendor.innerHTML=""; const select=createVendorSelect(currentVendors,idx); tdVendor.appendChild(select);
+      btn.textContent="Update"; btn.classList.add("btn-update"); btn.onclick=()=>handleSave(idx,tdVendor,btn);
     }
 
-    async function saveVendors(rowIndex, vendors, btn, tdVendor) {
-      btn.disabled = true;
-      const formData = new FormData();
-      formData.append("action", "updateVendors");
-      formData.append("rowIndex", rowIndex);
-      formData.append("vendors", vendors.join(", "));
-      try {
-        const res = await fetch(scriptURL, { method: "POST", body: formData });
-        const result = await res.json();
-        if (result.success) {
-          tdVendor.innerHTML = "";
-          const container = document.createElement("div");
-          container.className = "vendor-list";
-          vendors.forEach(v => {
-            const span = document.createElement("span");
-            span.className = "vendor-tag";
-            span.textContent = v;
-            container.appendChild(span);
-          });
+    async function saveVendors(rowIndex,vendors,btn,tdVendor){
+      btn.disabled=true;
+      showPopup("Saving...",true);
+      const formData=new FormData();
+      formData.append("action","updateVendors"); formData.append("rowIndex",rowIndex); formData.append("vendors",vendors.join(", "));
+      try{
+        const res=await fetch(scriptURL,{method:"POST",body:formData});
+        const result=await res.json();
+        if(result.success){
+          tdVendor.innerHTML="";
+          const container=document.createElement("div"); container.className="vendor-list";
+          vendors.forEach(v=>{ const span=document.createElement("span"); span.className="vendor-tag"; span.textContent=v; container.appendChild(span);});
           tdVendor.appendChild(container);
-          btn.textContent = "Update";
-          btn.classList.add("btn-update");
-          btn.onclick = () => switchToEditable(vendors, rowIndex, tdVendor, btn);
-          showMessage("Vendors saved ✅", "success");
-        } else {
-          showMessage("Save failed", "error");
-        }
-      } catch (err) {
-        showMessage("Error: " + err.message, "error");
-      }
-      btn.disabled = false;
+          btn.textContent="Update"; btn.classList.add("btn-update");
+          btn.onclick=()=>switchToEditable(vendors,rowIndex,tdVendor,btn);
+
+          // Extract progress
+          const progressArray=result.progress || [];
+          for(let i=0;i<progressArray.length;i++){
+            showPopup(`Extracting ${progressArray[i].current}/${progressArray[i].total}`,true);
+            await new Promise(r=>setTimeout(r,150));
+          }
+          showPopup("Done ✅");
+          setTimeout(()=>hidePopup(),1500);
+          showMessage("Vendors saved & extracted ✅","success");
+        } else { showMessage("Save failed","error"); }
+      } catch(err){ showMessage("Error: "+err.message,"error"); }
+      btn.disabled=false;
     }
 
-    function filterTable() {
-      const q = (document.getElementById("searchInput").value || "").trim().toLowerCase();
-      if (!q) { renderTable(tableData); return; }
-      const filtered = tableData.filter(row => {
-        const nitNo       = valueToString(row[4]).toLowerCase();
-        const date        = formatDate(row[5]).toLowerCase();
-        const slNo        = valueToString(row[6]).toLowerCase();
-        const activityId  = valueToString(row[8]).toLowerCase();
-        const workName    = valueToString(row[9]).toLowerCase();
-        const siteDetails = valueToString(row[10]).toLowerCase();
-        const fund        = valueToString(row[11]).toLowerCase();
-        const uniqueNIT   = valueToString(row[7]).toLowerCase();
+    function filterTable(){
+      const q=(document.getElementById("searchInput").value||"").trim().toLowerCase();
+      if(!q){ renderTable(tableData); return; }
+      const filtered=tableData.filter(row=>{
+        const nitNo=valueToString(row[4]).toLowerCase(), date=formatDate(row[5]).toLowerCase(),
+        slNo=valueToString(row[6]).toLowerCase(), activityId=valueToString(row[8]).toLowerCase(),
+        workName=valueToString(row[9]).toLowerCase(), siteDetails=valueToString(row[10]).toLowerCase(),
+        fund=valueToString(row[11]).toLowerCase(), uniqueNIT=valueToString(row[7]).toLowerCase();
         return (uniqueNIT.includes(q) || nitNo.includes(q) || date.includes(q) ||
                 activityId.includes(q) || workName.includes(q) ||
                 siteDetails.includes(q) || fund.includes(q));
@@ -289,21 +215,10 @@
       renderTable(filtered);
     }
 
-    function clearSearch() {
-      document.getElementById("searchInput").value = "";
-      renderTable(tableData);
-    }
-
-    function showMessage(text, type) {
-      const msg = document.getElementById("message");
-      msg.textContent = text;
-      msg.className = type;
-      msg.style.display = "block";
-      setTimeout(() => { msg.style.display = "none"; }, 2200);
-    }
+    function clearSearch(){ document.getElementById("searchInput").value=""; renderTable(tableData); }
+    function showMessage(text,type){ const msg=document.getElementById("message"); msg.textContent=text; msg.className=type; msg.style.display="block"; setTimeout(()=>{msg.style.display="none";},2200); }
 
     loadData();
   </script>
 </body>
 </html>
-
