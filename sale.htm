@@ -10,26 +10,13 @@
 
   <style>
     body { font-family: Arial, sans-serif; background: #2b2b2b; color: #eee; margin: 0; padding: 20px; }
-    h2 { color: #fff; display: inline-block; margin: 0; }
-
-    .header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-    .summary-stamp {
-      background: #003366;
-      color: #fff;
-      border-radius: 8px;
-      padding: 10px 18px;
-      font-size: 14px;
-      font-weight: bold;
-      line-height: 1.5;
-      text-align: right;
-      box-shadow: 0 0 8px rgba(0,0,0,0.3);
-      min-width: 90px;   /* adjust width here */
-    }
-
+    h2 { color: #fff; display: inline-block; }
     .toolbar { margin-bottom: 15px; display: flex; gap: 10px; justify-content: space-between; align-items: center; }
     .toolbar input { padding: 6px; border-radius: 4px; border: 1px solid #555; width: 360px; font-size: 13px; }
     .toolbar button { padding: 6px 12px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; }
     .toolbar button:hover { background: #218838; }
+    .spinner { width: 14px; height: 14px; border: 2px solid #fff; border-top: 2px solid transparent; border-radius: 50%; display: inline-block; animation: spin 0.8s linear infinite; }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
     table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; background: #333; }
     th, td { border: 1px solid #555; padding: 6px; text-align: center; vertical-align: top; }
@@ -38,37 +25,41 @@
     /* Vendor Styling */
     .vendor-list { max-height: 100px; overflow-y: auto; text-align: left; padding-right: 6px; }
     .vendor-tag { display: block; background: green; color: #fff; font-weight: bold; border-radius: 4px; padding: 2px 6px; margin: 2px 0; font-size: 11px; text-align: left; }
-    .vendor-count { font-size: 11px; color: #ffcc00; margin-top: 4px; display: block; text-align: right; }
 
+    /* Narrow Vendor column */
     #dataTable th:nth-child(14),
     #dataTable td:nth-child(14) {
       width: 150px;
       max-width: 150px;
     }
 
+    .choices { min-width: 200px; font-size: 12px; text-align: left; }
+    .choices__inner { background: #fff; color: #000; }
+    .choices__list--dropdown .choices__item { background: #000 !important; color: #fff !important; }
+    .choices__list--dropdown .is-selected { background: green !important; color: #fff !important; font-weight: bold; }
+    .choices__inner .choices__item { background: green !important; color: #fff !important; font-weight: bold; border-radius: 4px; padding: 2px 6px; margin: 2px; }
+
     #message { margin: 10px 0; padding: 8px; display: none; border-radius: 4px; font-size: 13px; text-align: center; }
     #message.success { background: #28a745; color: #fff; }
     #message.error { background: #dc3545; color: #fff; }
+    #message.loading { background: #007bff; color: #fff; }
 
     button.action-btn { padding: 6px 14px; border: none; border-radius: 6px; color: #fff; cursor: pointer; font-size: 13px; font-weight: bold; }
     .btn-save { background: green; }
     .btn-update { background: orange; }
 
-    /* Popup */
+    /* Extraction Progress Popup */
     #progressPopup { display:none; position:fixed; top:0; left:0; width:100%; height:100%; 
       background:rgba(0,0,0,0.3); z-index:9999; align-items:center; justify-content:center; }
     #progressPopup div { background:#28a745; color:#fff; padding:20px 30px; border-radius:12px; 
-      box-shadow:0 2px 10px rgba(0,0,0,0.25); font-size:15px; font-weight:500; text-align:center; }
+      box-shadow:0 2px 10px rgba(0,0,0,0.25); font-size:15px; font-weight:500; text-align:center; animation:popIn 0.3s ease; }
+    @keyframes popIn { from {transform:scale(0.9);opacity:0;} to{transform:scale(1);opacity:1;} }
+    .blink { animation: blinkAnim 1s infinite; }
+    @keyframes blinkAnim { 50%{opacity:0.4;} }
   </style>
 </head>
 <body>
-  <div class="header-bar">
-    <h2>Sale of Tender Form</h2>
-    <div class="summary-stamp" id="summaryStamp">
-      Total NIT = 0<br>
-      Total Schemes = 0
-    </div>
-  </div>
+  <h2>Sale of Tender Form</h2>
 
   <div id="message"></div>
   <div id="progressPopup"><div><span id="progressMessage">Processing...</span></div></div>
@@ -109,105 +100,347 @@
     let tableData = [];
     let vendorOptions = [];
 
-    function valueToString(v){ if(v===null||v===undefined) return ""; return String(v); }
+    function valueToString(v) { if(v===null||v===undefined) return ""; if(typeof v==="string") return v; if(typeof v==="number") return String(v); try{ return String(v); }catch{return "";}}
 
-    async function refreshData(){ await loadData(); }
+    async function refreshData() {
+      const btn = document.getElementById("refreshBtn");
+      const oldHTML = btn.innerHTML;
+      btn.innerHTML = `<span class="spinner"></span> Refreshing...`;
+      btn.disabled = true;
+      showMessage("Refreshing data...", "loading");
+      try { await loadData(); showMessage("Data refreshed ✅", "success"); }
+      catch(err){ showMessage("Refresh failed: "+err.message,"error"); }
+      finally{ btn.innerHTML = oldHTML; btn.disabled=false; }
+    }
 
-    async function loadData(){
-      const [vRes,tRes] = await Promise.all([
-        fetch(scriptURL+"?action=getVendors"),
-        fetch(scriptURL+"?action=getTenderData")
-      ]);
+    async function loadData() {
+      const [vRes,tRes] = await Promise.all([fetch(scriptURL+"?action=getVendors"),fetch(scriptURL+"?action=getTenderData")]);
       vendorOptions = await vRes.json();
       tableData = await tRes.json();
       renderTable(tableData);
-      updateSummary(tableData);
     }
 
-    function updateSummary(data){
-      const totalSchemes = data.length;
-      const uniqueNITs = new Set(data.map(r => valueToString(r[4]).trim()).filter(Boolean)).size;
-      document.getElementById("summaryStamp").innerHTML =
-        `Total NIT = ${uniqueNITs}<br>Total Schemes = ${totalSchemes}`;
-    }
+    function formatTimestamp(raw){ if(!raw) return ""; let d=new Date(raw); if(!isNaN(d)) return d.toLocaleString("en-US",{hour12:false}); return raw; }
+    function formatDate(raw){ if(!raw) return ""; let d=new Date(raw); if(!isNaN(d)) return d.toLocaleDateString("en-GB"); return raw; }
+
+    function showPopup(msg, blink=false){ const el=document.getElementById("progressMessage"); el.innerText=msg; if(blink) el.classList.add("blink"); else el.classList.remove("blink"); document.getElementById("progressPopup").style.display="flex"; }
+    function hidePopup(){ document.getElementById("progressPopup").style.display="none"; }
 
     function renderTable(data){
-      const tbody=document.querySelector("#dataTable tbody");
-      tbody.innerHTML="";
-      data.forEach((row,idx)=>{
-        const tr=document.createElement("tr");
-        const timeStamp=valueToString(row[0]),
-              finYear=valueToString(row[1]),
-              nitNo=valueToString(row[4]),
-              nitDate=valueToString(row[5]),
-              slNo=valueToString(row[6]),
-              uniqueNIT=valueToString(row[7]),
-              activityId=valueToString(row[8]),
-              workName=valueToString(row[9]),
-              siteDetails=valueToString(row[10]),
-              fund=valueToString(row[11]),
-              tenderAmt=valueToString(row[12]),
-              formPrice=valueToString(row[13]),
-              earnest=valueToString(row[14]),
-              vendorsArr=valueToString(row[15]).split(",").map(s=>s.trim()).filter(s=>s);
+      const tbody = document.querySelector("#dataTable tbody");
+      tbody.innerHTML = "";
 
-        [timeStamp,finYear,uniqueNIT,nitNo,nitDate,slNo,activityId,workName,siteDetails,fund,tenderAmt,formPrice,earnest].forEach(val=>{
-          const td=document.createElement("td"); td.textContent=val; tr.appendChild(td);
-        });
+      data.forEach((row, idx)=>{
+        const tr = document.createElement("tr");
+        const timeStamp=formatTimestamp(row[0]), finYear=valueToString(row[1]), nitNo=valueToString(row[4]), nitDate=formatDate(row[5]), slNo=valueToString(row[6]), uniqueNIT=valueToString(row[7]), activityId=valueToString(row[8]), workName=valueToString(row[9]), siteDetails=valueToString(row[10]), fund=valueToString(row[11]), tenderAmt=valueToString(row[12]), formPrice=valueToString(row[13]), earnest=valueToString(row[14]), vendorsArr=valueToString(row[15]).split(",").map(s=>s.trim()).filter(s=>s);
+
+        [timeStamp,finYear,uniqueNIT,nitNo,nitDate,slNo,activityId,workName,siteDetails,fund,tenderAmt,formPrice,earnest].forEach(val=>{const td=document.createElement("td"); td.textContent=val; tr.appendChild(td);});
 
         const tdVendor=document.createElement("td");
         if(vendorsArr.length>0){
-          const container=document.createElement("div"); container.className="vendor-list";
-          vendorsArr.forEach(v=>{
-            const span=document.createElement("span");
-            span.className="vendor-tag"; span.textContent=v;
-            container.appendChild(span);
-          });
-          const countSpan=document.createElement("span");
-          countSpan.className="vendor-count";
-          countSpan.textContent="Count: "+vendorsArr.length;
-          container.appendChild(countSpan);
-          tdVendor.appendChild(container);
-        } else {
-          tdVendor.textContent = "—";
-        }
+          const container=document.createElement("div"); container.className="vendor-list"; vendorsArr.forEach(v=>{const span=document.createElement("span"); span.className="vendor-tag"; span.textContent=v; container.appendChild(span);}); tdVendor.appendChild(container);
+        } else { tdVendor.appendChild(createVendorSelect([],idx)); }
         tr.appendChild(tdVendor);
 
         const tdAction=document.createElement("td");
-        const btn=document.createElement("button");
-        btn.textContent="Save"; btn.classList.add("action-btn","btn-save");
-        tdAction.appendChild(btn);
-        tr.appendChild(tdAction);
-
+        const btn=document.createElement("button"); btn.classList.add("action-btn");
+        if(vendorsArr.length===0){ btn.textContent="Save"; btn.classList.add("btn-save"); btn.onclick=()=>handleSave(idx,tdVendor,btn);}
+        else{ btn.textContent="Update"; btn.classList.add("btn-update"); btn.onclick=()=>switchToEditable(vendorsArr,idx,tdVendor,btn);}
+        tdAction.appendChild(btn); tr.appendChild(tdAction);
         tbody.appendChild(tr);
       });
     }
 
+    function createVendorSelect(selectedVendors,rowIndex){
+      const select=document.createElement("select"); select.multiple=true;
+      vendorOptions.forEach(opt=>{const option=document.createElement("option"); option.value=opt; option.textContent=opt; if(selectedVendors.includes(opt)) option.selected=true; select.appendChild(option); });
+      new Choices(select,{removeItemButton:true, searchEnabled:true});
+      return select;
+    }
+
+    async function handleSave(idx,tdVendor,btn){
+      const select=tdVendor.querySelector("select"); if(!select) return;
+      const chosen=Array.from(select.selectedOptions).map(o => o.value);
+      if(chosen.length<3){ alert("⚠ Please select at least 3 vendors."); return; }
+      await saveVendors(idx,chosen,btn,tdVendor);
+    }
+
+    function switchToEditable(currentVendors,idx,tdVendor,btn){
+      tdVendor.innerHTML=""; const select=createVendorSelect(currentVendors,idx); tdVendor.appendChild(select);
+      btn.textContent="Update"; btn.classList.add("btn-update"); btn.onclick=()=>handleSave(idx,tdVendor,btn);
+    }
+
+    async function saveVendors(rowIndex,vendors,btn,tdVendor){
+      btn.disabled=true;
+      showPopup("Saving...",true);
+      const formData=new FormData();
+      formData.append("action","updateVendors"); formData.append("rowIndex",rowIndex); formData.append("vendors",vendors.join(", "));
+      try{
+        const res=await fetch(scriptURL,{method:"POST",body:formData});
+        const result=await res.json();
+        if(result.success){
+          tdVendor.innerHTML="";
+          const container=document.createElement("div"); container.className="vendor-list";
+          vendors.forEach(v=>{ const span=document.createElement("span"); span.className="vendor-tag"; span.textContent=v; container.appendChild(span);});
+          tdVendor.appendChild(container);
+          btn.textContent="Update"; btn.classList.add("btn-update");
+          btn.onclick=()=>switchToEditable(vendors,rowIndex,tdVendor,btn);
+
+          // Extract progress
+          const progressArray=result.progress || [];
+          for(let i=0;i<progressArray.length;i++){
+            showPopup(`Extracting ${progressArray[i].current}/${progressArray[i].total}`,true);
+            await new Promise(r=>setTimeout(r,150));
+          }
+          showPopup("Done ✅");
+          setTimeout(()=>hidePopup(),1500);
+          showMessage("Vendors saved & extracted ✅","success");
+        } else { showMessage("Save failed","error"); }
+      } catch(err){ showMessage("Error: "+err.message,"error"); }
+      btn.disabled=false;
+    }
+
     function filterTable(){
       const q=(document.getElementById("searchInput").value||"").trim().toLowerCase();
-      if(!q){ renderTable(tableData); updateSummary(tableData); return; }
+      if(!q){ renderTable(tableData); return; }
       const filtered=tableData.filter(row=>{
-        const nitNo=valueToString(row[4]).toLowerCase(),
-              date=valueToString(row[5]).toLowerCase(),
-              slNo=valueToString(row[6]).toLowerCase(),
-              activityId=valueToString(row[8]).toLowerCase(),
-              workName=valueToString(row[9]).toLowerCase(),
-              siteDetails=valueToString(row[10]).toLowerCase(),
-              fund=valueToString(row[11]).toLowerCase(),
-              uniqueNIT=valueToString(row[7]).toLowerCase();
+        const nitNo=valueToString(row[4]).toLowerCase(), date=formatDate(row[5]).toLowerCase(),
+        slNo=valueToString(row[6]).toLowerCase(), activityId=valueToString(row[8]).toLowerCase(),
+        workName=valueToString(row[9]).toLowerCase(), siteDetails=valueToString(row[10]).toLowerCase(),
+        fund=valueToString(row[11]).toLowerCase(), uniqueNIT=valueToString(row[7]).toLowerCase();
         return (uniqueNIT.includes(q) || nitNo.includes(q) || date.includes(q) ||
                 activityId.includes(q) || workName.includes(q) ||
                 siteDetails.includes(q) || fund.includes(q));
       });
       renderTable(filtered);
-      updateSummary(filtered);
     }
 
-    function clearSearch(){
-      document.getElementById("searchInput").value="";
-      renderTable(tableData);
-      updateSummary(tableData);
+    function clearSearch(){ document.getElementById("searchInput").value=""; renderTable(tableData); }
+    function showMessage(text,type){ const msg=document.getElementById("message"); msg.textContent=text; msg.className=type; msg.style.display="block"; setTimeout(()=>{msg.style.display="none";},2200); }
+
+    loadData();
+  </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Sale of Tender Form</title>
+
+  <!-- Choices.js -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+
+  <style>
+    body { font-family: Arial, sans-serif; background: #2b2b2b; color: #eee; margin: 0; padding: 20px; }
+    h2 { color: #fff; display: inline-block; }
+    .toolbar { margin-bottom: 15px; display: flex; gap: 10px; justify-content: space-between; align-items: center; }
+    .toolbar input { padding: 6px; border-radius: 4px; border: 1px solid #555; width: 360px; font-size: 13px; }
+    .toolbar button { padding: 6px 12px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; }
+    .toolbar button:hover { background: #218838; }
+    .spinner { width: 14px; height: 14px; border: 2px solid #fff; border-top: 2px solid transparent; border-radius: 50%; display: inline-block; animation: spin 0.8s linear infinite; }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; background: #333; }
+    th, td { border: 1px solid #555; padding: 6px; text-align: center; vertical-align: top; }
+    thead { background: #003366; color: #fff; position: sticky; top: 0; z-index: 2; }
+
+    /* Vendor Styling */
+    .vendor-list { max-height: 100px; overflow-y: auto; text-align: left; padding-right: 6px; }
+    .vendor-tag { display: block; background: green; color: #fff; font-weight: bold; border-radius: 4px; padding: 2px 6px; margin: 2px 0; font-size: 11px; text-align: left; }
+
+    /* Narrow Vendor column */
+    #dataTable th:nth-child(14),
+    #dataTable td:nth-child(14) {
+      width: 150px;
+      max-width: 150px;
     }
+
+    .choices { min-width: 200px; font-size: 12px; text-align: left; }
+    .choices__inner { background: #fff; color: #000; }
+    .choices__list--dropdown .choices__item { background: #000 !important; color: #fff !important; }
+    .choices__list--dropdown .is-selected { background: green !important; color: #fff !important; font-weight: bold; }
+    .choices__inner .choices__item { background: green !important; color: #fff !important; font-weight: bold; border-radius: 4px; padding: 2px 6px; margin: 2px; }
+
+    #message { margin: 10px 0; padding: 8px; display: none; border-radius: 4px; font-size: 13px; text-align: center; }
+    #message.success { background: #28a745; color: #fff; }
+    #message.error { background: #dc3545; color: #fff; }
+    #message.loading { background: #007bff; color: #fff; }
+
+    button.action-btn { padding: 6px 14px; border: none; border-radius: 6px; color: #fff; cursor: pointer; font-size: 13px; font-weight: bold; }
+    .btn-save { background: green; }
+    .btn-update { background: orange; }
+
+    /* Extraction Progress Popup */
+    #progressPopup { display:none; position:fixed; top:0; left:0; width:100%; height:100%; 
+      background:rgba(0,0,0,0.3); z-index:9999; align-items:center; justify-content:center; }
+    #progressPopup div { background:#28a745; color:#fff; padding:20px 30px; border-radius:12px; 
+      box-shadow:0 2px 10px rgba(0,0,0,0.25); font-size:15px; font-weight:500; text-align:center; animation:popIn 0.3s ease; }
+    @keyframes popIn { from {transform:scale(0.9);opacity:0;} to{transform:scale(1);opacity:1;} }
+    .blink { animation: blinkAnim 1s infinite; }
+    @keyframes blinkAnim { 50%{opacity:0.4;} }
+  </style>
+</head>
+<body>
+  <h2>Sale of Tender Form</h2>
+
+  <div id="message"></div>
+  <div id="progressPopup"><div><span id="progressMessage">Processing...</span></div></div>
+
+  <div class="toolbar">
+    <input id="searchInput" type="text" placeholder="🔍 Search..." oninput="filterTable()" />
+    <div style="display:flex; gap:8px;">
+      <button id="refreshBtn" onclick="refreshData()">⟳ Refresh</button>
+      <button id="clearSearchBtn" onclick="clearSearch()">✖ Clear</button>
+    </div>
+  </div>
+
+  <table id="dataTable">
+    <thead>
+      <tr>
+        <th>Timestamp</th>
+        <th>Financial Year</th>
+        <th>UNIQUE NIT</th>
+        <th>NIT No</th>
+        <th>Date</th>
+        <th>Sl No.</th>
+        <th>Activity ID</th>
+        <th>Name of the work</th>
+        <th>Site details</th>
+        <th>Source of Fund</th>
+        <th>Tendered Amount (In Rs.)</th>
+        <th>Tender Form Price</th>
+        <th>Earnest Money</th>
+        <th>Vendors</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    const scriptURL = "https://script.google.com/macros/s/AKfycbxgOwETYg5roDTEnBqy8qQGnC-FNzx2iOz5qYVZE5TySfDHmmEb_uEx2DL4c4GKbNEwMQ/exec"; 
+    let tableData = [];
+    let vendorOptions = [];
+
+    function valueToString(v) { if(v===null||v===undefined) return ""; if(typeof v==="string") return v; if(typeof v==="number") return String(v); try{ return String(v); }catch{return "";}}
+
+    async function refreshData() {
+      const btn = document.getElementById("refreshBtn");
+      const oldHTML = btn.innerHTML;
+      btn.innerHTML = `<span class="spinner"></span> Refreshing...`;
+      btn.disabled = true;
+      showMessage("Refreshing data...", "loading");
+      try { await loadData(); showMessage("Data refreshed ✅", "success"); }
+      catch(err){ showMessage("Refresh failed: "+err.message,"error"); }
+      finally{ btn.innerHTML = oldHTML; btn.disabled=false; }
+    }
+
+    async function loadData() {
+      const [vRes,tRes] = await Promise.all([fetch(scriptURL+"?action=getVendors"),fetch(scriptURL+"?action=getTenderData")]);
+      vendorOptions = await vRes.json();
+      tableData = await tRes.json();
+      renderTable(tableData);
+    }
+
+    function formatTimestamp(raw){ if(!raw) return ""; let d=new Date(raw); if(!isNaN(d)) return d.toLocaleString("en-US",{hour12:false}); return raw; }
+    function formatDate(raw){ if(!raw) return ""; let d=new Date(raw); if(!isNaN(d)) return d.toLocaleDateString("en-GB"); return raw; }
+
+    function showPopup(msg, blink=false){ const el=document.getElementById("progressMessage"); el.innerText=msg; if(blink) el.classList.add("blink"); else el.classList.remove("blink"); document.getElementById("progressPopup").style.display="flex"; }
+    function hidePopup(){ document.getElementById("progressPopup").style.display="none"; }
+
+    function renderTable(data){
+      const tbody = document.querySelector("#dataTable tbody");
+      tbody.innerHTML = "";
+
+      data.forEach((row, idx)=>{
+        const tr = document.createElement("tr");
+        const timeStamp=formatTimestamp(row[0]), finYear=valueToString(row[1]), nitNo=valueToString(row[4]), nitDate=formatDate(row[5]), slNo=valueToString(row[6]), uniqueNIT=valueToString(row[7]), activityId=valueToString(row[8]), workName=valueToString(row[9]), siteDetails=valueToString(row[10]), fund=valueToString(row[11]), tenderAmt=valueToString(row[12]), formPrice=valueToString(row[13]), earnest=valueToString(row[14]), vendorsArr=valueToString(row[15]).split(",").map(s=>s.trim()).filter(s=>s);
+
+        [timeStamp,finYear,uniqueNIT,nitNo,nitDate,slNo,activityId,workName,siteDetails,fund,tenderAmt,formPrice,earnest].forEach(val=>{const td=document.createElement("td"); td.textContent=val; tr.appendChild(td);});
+
+        const tdVendor=document.createElement("td");
+        if(vendorsArr.length>0){
+          const container=document.createElement("div"); container.className="vendor-list"; vendorsArr.forEach(v=>{const span=document.createElement("span"); span.className="vendor-tag"; span.textContent=v; container.appendChild(span);}); tdVendor.appendChild(container);
+        } else { tdVendor.appendChild(createVendorSelect([],idx)); }
+        tr.appendChild(tdVendor);
+
+        const tdAction=document.createElement("td");
+        const btn=document.createElement("button"); btn.classList.add("action-btn");
+        if(vendorsArr.length===0){ btn.textContent="Save"; btn.classList.add("btn-save"); btn.onclick=()=>handleSave(idx,tdVendor,btn);}
+        else{ btn.textContent="Update"; btn.classList.add("btn-update"); btn.onclick=()=>switchToEditable(vendorsArr,idx,tdVendor,btn);}
+        tdAction.appendChild(btn); tr.appendChild(tdAction);
+        tbody.appendChild(tr);
+      });
+    }
+
+    function createVendorSelect(selectedVendors,rowIndex){
+      const select=document.createElement("select"); select.multiple=true;
+      vendorOptions.forEach(opt=>{const option=document.createElement("option"); option.value=opt; option.textContent=opt; if(selectedVendors.includes(opt)) option.selected=true; select.appendChild(option); });
+      new Choices(select,{removeItemButton:true, searchEnabled:true});
+      return select;
+    }
+
+    async function handleSave(idx,tdVendor,btn){
+      const select=tdVendor.querySelector("select"); if(!select) return;
+      const chosen=Array.from(select.selectedOptions).map(o => o.value);
+      if(chosen.length<3){ alert("⚠ Please select at least 3 vendors."); return; }
+      await saveVendors(idx,chosen,btn,tdVendor);
+    }
+
+    function switchToEditable(currentVendors,idx,tdVendor,btn){
+      tdVendor.innerHTML=""; const select=createVendorSelect(currentVendors,idx); tdVendor.appendChild(select);
+      btn.textContent="Update"; btn.classList.add("btn-update"); btn.onclick=()=>handleSave(idx,tdVendor,btn);
+    }
+
+    async function saveVendors(rowIndex,vendors,btn,tdVendor){
+      btn.disabled=true;
+      showPopup("Saving...",true);
+      const formData=new FormData();
+      formData.append("action","updateVendors"); formData.append("rowIndex",rowIndex); formData.append("vendors",vendors.join(", "));
+      try{
+        const res=await fetch(scriptURL,{method:"POST",body:formData});
+        const result=await res.json();
+        if(result.success){
+          tdVendor.innerHTML="";
+          const container=document.createElement("div"); container.className="vendor-list";
+          vendors.forEach(v=>{ const span=document.createElement("span"); span.className="vendor-tag"; span.textContent=v; container.appendChild(span);});
+          tdVendor.appendChild(container);
+          btn.textContent="Update"; btn.classList.add("btn-update");
+          btn.onclick=()=>switchToEditable(vendors,rowIndex,tdVendor,btn);
+
+          // Extract progress
+          const progressArray=result.progress || [];
+          for(let i=0;i<progressArray.length;i++){
+            showPopup(`Extracting ${progressArray[i].current}/${progressArray[i].total}`,true);
+            await new Promise(r=>setTimeout(r,150));
+          }
+          showPopup("Done ✅");
+          setTimeout(()=>hidePopup(),1500);
+          showMessage("Vendors saved & extracted ✅","success");
+        } else { showMessage("Save failed","error"); }
+      } catch(err){ showMessage("Error: "+err.message,"error"); }
+      btn.disabled=false;
+    }
+
+    function filterTable(){
+      const q=(document.getElementById("searchInput").value||"").trim().toLowerCase();
+      if(!q){ renderTable(tableData); return; }
+      const filtered=tableData.filter(row=>{
+        const nitNo=valueToString(row[4]).toLowerCase(), date=formatDate(row[5]).toLowerCase(),
+        slNo=valueToString(row[6]).toLowerCase(), activityId=valueToString(row[8]).toLowerCase(),
+        workName=valueToString(row[9]).toLowerCase(), siteDetails=valueToString(row[10]).toLowerCase(),
+        fund=valueToString(row[11]).toLowerCase(), uniqueNIT=valueToString(row[7]).toLowerCase();
+        return (uniqueNIT.includes(q) || nitNo.includes(q) || date.includes(q) ||
+                activityId.includes(q) || workName.includes(q) ||
+                siteDetails.includes(q) || fund.includes(q));
+      });
+      renderTable(filtered);
+    }
+
+    function clearSearch(){ document.getElementById("searchInput").value=""; renderTable(tableData); }
+    function showMessage(text,type){ const msg=document.getElementById("message"); msg.textContent=text; msg.className=type; msg.style.display="block"; setTimeout(()=>{msg.style.display="none";},2200); }
 
     loadData();
   </script>
