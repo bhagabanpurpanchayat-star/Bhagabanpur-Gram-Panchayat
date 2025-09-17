@@ -86,7 +86,7 @@
   </table>
 
   <script>
-    const scriptURL = "https://script.google.com/macros/s/AKfycbwViJqv3Q8MzK-z0Y3g1cjp3ZsJHARyT4p-xd7Mw36HYFe_JQoGlZmGJaX-R8NslHiKgA/exec"; // 🔹 replace with your Apps Script webapp URL
+    const scriptURL = "https://script.google.com/macros/s/AKfycbzXQXHSKgoNtTiOvh2d7ZlfhSAcSdE9kHDvphCI-dp9EDlX7ABcK83IxBWWVzRCfcmdzA/exec"; 
     let tableData = [];
     let vendorOptions = [];
 
@@ -124,26 +124,17 @@
       renderTable(tableData);
     }
 
-    function generateUniqueNIT(nitNo, slNo) {
-      const sNit = valueToString(nitNo).trim();
-      const sSl = valueToString(slNo).trim();
-      if (!sNit) return "";
-      const m = sNit.match(/^([^\/]+)\s*\/\s*BGP/i);
-      let prefix = m ? m[1] : sNit.split("/")[0];
-      return prefix + (sSl ? ("/" + sSl) : "");
-    }
-
     function formatTimestamp(raw) {
       if (!raw) return "";
       let d = new Date(raw);
-      if (!isNaN(d)) return d.toLocaleString("en-US", { hour12: false }); // 6/26/2025 21:23:04
+      if (!isNaN(d)) return d.toLocaleString("en-US", { hour12: false });
       return raw;
     }
 
     function formatDate(raw) {
       if (!raw) return "";
       let d = new Date(raw);
-      if (!isNaN(d)) return d.toLocaleDateString("en-GB"); // 17/06/2025
+      if (!isNaN(d)) return d.toLocaleDateString("en-GB");
       return raw;
     }
 
@@ -154,30 +145,30 @@
       data.forEach((row, idx) => {
         const tr = document.createElement("tr");
 
-        const timeStamp   = formatTimestamp(row[0]);
-        const finYear     = valueToString(row[1]);
-        const nitNo       = valueToString(row[4]);
-        const date        = formatDate(row[5]);
-        const slNo        = valueToString(row[6]);
-        const activityId  = valueToString(row[7]);
-        const workName    = valueToString(row[8]);
-        const siteDetails = valueToString(row[9]);
-        const fund        = valueToString(row[10]);
-        const tenderAmt   = valueToString(row[11]);
-        const formPrice   = valueToString(row[12]);
-        const earnest     = valueToString(row[13]);
-        const vendorsArr  = valueToString(row[14]).split(",").map(s => s.trim()).filter(s => s);
+        const timeStamp   = formatTimestamp(row[0]); // Timestamp
+        const finYear     = valueToString(row[1]);   // Financial Year
+        // row[2] = Memo No (skip, not in HTML)
+        const nitNo       = valueToString(row[4]);   // NIT No
+        const nitDate     = formatDate(row[5]);      // NIT Date
+        const slNo        = valueToString(row[6]);   // Sl No.
+        const uniqueNIT   = valueToString(row[7]);   // UNIQUE NIT (from sheet)
+        const activityId  = valueToString(row[8]);   // Activity ID
+        const workName    = valueToString(row[9]);   // Name of work
+        const siteDetails = valueToString(row[10]);  // Site details
+        const fund        = valueToString(row[11]);  // Source of Fund
+        const tenderAmt   = valueToString(row[12]);  // Tendered Amount
+        const formPrice   = valueToString(row[13]);  // Tender Form Price
+        const earnest     = valueToString(row[14]);  // Earnest Money
+        const vendorsArr  = valueToString(row[15]).split(",").map(s => s.trim()).filter(s => s);
 
-        const uniqueNIT = generateUniqueNIT(nitNo, slNo);
-
-        [timeStamp, finYear, uniqueNIT, nitNo, date, slNo, activityId, workName,
+        [timeStamp, finYear, uniqueNIT, nitNo, nitDate, slNo, activityId, workName,
           siteDetails, fund, tenderAmt, formPrice, earnest].forEach(val => {
           const td = document.createElement("td");
           td.textContent = val;
           tr.appendChild(td);
         });
 
-        // Vendors cell
+        // Vendors
         const tdVendor = document.createElement("td");
         if (vendorsArr.length > 0) {
           const container = document.createElement("div");
@@ -195,7 +186,7 @@
         }
         tr.appendChild(tdVendor);
 
-        // Action cell
+        // Action
         const tdAction = document.createElement("td");
         const btn = document.createElement("button");
         btn.classList.add("action-btn");
@@ -286,11 +277,11 @@
         const nitNo       = valueToString(row[4]).toLowerCase();
         const date        = formatDate(row[5]).toLowerCase();
         const slNo        = valueToString(row[6]).toLowerCase();
-        const activityId  = valueToString(row[7]).toLowerCase();
-        const workName    = valueToString(row[8]).toLowerCase();
-        const siteDetails = valueToString(row[9]).toLowerCase();
-        const fund        = valueToString(row[10]).toLowerCase();
-        const uniqueNIT   = generateUniqueNIT(nitNo, slNo).toLowerCase();
+        const activityId  = valueToString(row[8]).toLowerCase();
+        const workName    = valueToString(row[9]).toLowerCase();
+        const siteDetails = valueToString(row[10]).toLowerCase();
+        const fund        = valueToString(row[11]).toLowerCase();
+        const uniqueNIT   = valueToString(row[7]).toLowerCase();
         return (uniqueNIT.includes(q) || nitNo.includes(q) || date.includes(q) ||
                 activityId.includes(q) || workName.includes(q) ||
                 siteDetails.includes(q) || fund.includes(q));
@@ -315,4 +306,3 @@
   </script>
 </body>
 </html>
-
