@@ -90,6 +90,8 @@
       border-radius: 4px;
       cursor: pointer;
       font-size: 12px;
+      background-color: #28a745;
+      color: white;
     }
     #message {
       margin-bottom: 10px;
@@ -103,10 +105,7 @@
     #message.success { background: #28a745; color: white; }
     #message.error { background: #dc3545; color: white; }
     #message.loading { background: #007bff; color: white; }
-    .accepted { color: green; font-weight: bold; }
-    .rejected { color: red; font-weight: bold; }
 
-    /* 🔹 Modal (centered) */
     .modal {
       display: none;
       position: fixed;
@@ -140,7 +139,6 @@
       align-items: center;
     }
     .modal-content h3 { margin: 0; color: #333; }
-
     .modal table {
       table-layout: auto;
       width: auto !important;
@@ -162,7 +160,6 @@
       max-width: 110px;
       box-sizing: border-box;
     }
-
     .modal .btn-bar {
       margin-top: 12px;
       text-align: right;
@@ -194,7 +191,7 @@
   <div id="message"></div>
 
   <div class="toolbar">
-    <input type="text" id="searchInput" placeholder="🔍 Search by UNIQUE NIT, NIT, NIT DATE, or VENDOR..." oninput="filterTable()">
+    <input type="text" id="searchInput" placeholder="🔍 Search..." oninput="filterTable()">
     <button id="refreshBtn" onclick="refreshData()">⟳ Refresh</button>
   </div>
 
@@ -208,7 +205,6 @@
         <th>NIT DATE</th>
         <th>VENDOR</th>
         <th>EARNEST MONEY</th>
-        <th>Marking</th>
         <th>Payment Status</th>
         <th>Tender Status</th>
         <th>Cheque No</th>
@@ -219,7 +215,6 @@
     <tbody></tbody>
   </table>
 
-  <!-- 🔹 Vendor Modal -->
   <div class="modal" id="vendorModal">
     <div class="modal-content">
       <div class="modal-header">
@@ -254,18 +249,32 @@
   </div>
 
   <script>
-    const scriptURL = "https://script.google.com/macros/s/AKfycbz4v9E_wYvSTYWq2N94FsNhCulk7hMNPAvaDNHDsgALL7r5MWjFo2nh3fGsECBqBChc/exec";
+    const scriptURL = "https://script.google.com/macros/s/AKfycbxvnmaasTpH-xGlbaX6BIgSGZ7qlnTLD7uPp5my_xYfleZAAmf1eveP_vVW_N67K_VJrw/exec";
     let tableData = [];
     let currentVendor = null;
 
+    function formatTimestamp(val){
+      if(!val) return "";
+      const d = new Date(val);
+      if(isNaN(d)) return val;
+      const pad = n => n.toString().padStart(2,'0');
+      return `${d.getMonth()+1}/${d.getDate()}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    }
+
+    function formatNitDate(val){
+      if(!val) return "";
+      const d = new Date(val);
+      if(isNaN(d)) return val;
+      return `${d.getMonth()+1}/${d.getDate()}/${d.getFullYear()}`;
+    }
+
     async function refreshData(){
       const btn=document.getElementById("refreshBtn");
-      const oldText=btn.innerHTML;
       btn.innerHTML=`<span class="spinner"></span> Refreshing...`;
       btn.disabled=true;
       showMessage("Refreshing data...","loading");
       await loadData();
-      btn.innerHTML=oldText;
+      btn.innerHTML="⟳ Refresh";
       btn.disabled=false;
       showMessage("Data loaded successfully ✅","success");
     }
@@ -278,9 +287,7 @@
         console.error("Load error:", err);
         tableData = [];
       }
-      const items = tableData.map((row, idx) => ({ row, idx }));
-      renderTable(items);
-      updateSummary();
+      renderTable(tableData.map((row, idx) => ({ row, idx })));
     }
 
     function renderTable(items){
@@ -290,39 +297,29 @@
         const row = item.row;
         const i = item.idx;
         let tr = document.createElement("tr");
-        for (let j=0; j<6; j++){
-          let td = document.createElement("td");
-          if (j === 5) {
-            td.innerHTML = `<a href="#" onclick="openModal('${escapeHtml(row[5])}');return false;">${escapeHtml(row[5]||"")}</a>`;
-          } else {
-            td.textContent = row[j] ?? "";
-          }
-          tr.appendChild(td);
-        }
-        let td6 = document.createElement("td"); td6.textContent = row[6] ?? ""; tr.appendChild(td6);
-        let td7 = document.createElement("td"); td7.textContent = row[7] ?? ""; tr.appendChild(td7);
-        let td8 = document.createElement("td");
-        td8.innerHTML = `<select id="payment_${i}" onchange="updateSummary();toggleButton(${i})">
-          <option value="PAID" ${row[8]==="PAID"?"selected":""}>PAID</option>
-          <option value="UNPAID" ${row[8]==="UNPAID"?"selected":""}>UNPAID</option>
-        </select>`;
-        tr.appendChild(td8);
-        let td9 = document.createElement("td");
-        td9.innerHTML = `<select id="status_${i}" onchange="updateTenderColor(${i});toggleButton(${i})">
-          <option value="" ${row[9]===""?"selected":""}></option>
-          <option value="ACCEPTED" ${row[9]==="ACCEPTED"?"selected":""}>ACCEPTED</option>
-          <option value="REJECTED" ${row[9]==="REJECTED"?"selected":""}>REJECTED</option>
-        </select>`;
-        tr.appendChild(td9);
-        let td10 = document.createElement("td");
-        td10.innerHTML = `<input type="text" id="cheque_${i}" value="${escapeHtml(row[10]||'')}" oninput="updatePaymentStatus(${i});toggleButton(${i})">`;
-        tr.appendChild(td10);
-        let td11 = document.createElement("td");
-        td11.innerHTML = `<input type="date" id="date_${i}" value="${formatDateForInput(row[11])}" oninput="toggleButton(${i})">`;
-        tr.appendChild(td11);
-        let tdAction = document.createElement("td");
-        tdAction.innerHTML = `<button class="action-btn" id="btn_${i}" onclick="updateRow(${i})">...</button>`;
-        tr.appendChild(tdAction);
+
+        tr.innerHTML = `
+          <td>${formatTimestamp(row[0])}</td>
+          <td>${row[1]||""}</td>
+          <td>${row[2]||""}</td>
+          <td>${row[3]||""}</td>
+          <td>${formatNitDate(row[4])}</td>
+          <td><a href="#" onclick="openModal('${row[5]}');return false;" style="color:yellow;font-weight:bold">${row[5]||""}</a></td>
+          <td>${row[6]}</td>
+          <td><select id="payment_${i}" disabled>
+            <option value="PAID" ${row[7]==="PAID"?"selected":""}>PAID</option>
+            <option value="UNPAID" ${row[7]==="UNPAID"?"selected":""}>UNPAID</option>
+          </select></td>
+          <td><select id="status_${i}" onchange="toggleButton(${i})">
+            <option value="" ${row[8]===""?"selected":""}></option>
+            <option value="ACCEPTED" ${row[8]==="ACCEPTED"?"selected":""}>ACCEPTED</option>
+            <option value="REJECTED" ${row[8]==="REJECTED"?"selected":""}>REJECTED</option>
+          </select></td>
+          <td><input type="text" id="cheque_${i}" value="${row[9]||''}" oninput="onChequeChange(${i})"></td>
+          <td><input type="date" id="date_${i}" value="${row[10]||''}" oninput="toggleButton(${i})"></td>
+          <td><button class="action-btn" id="btn_${i}" onclick="updateRow(${i})">Save</button></td>
+        `;
+
         tbody.appendChild(tr);
         updateTenderColor(i);
         toggleButton(i);
@@ -330,115 +327,75 @@
       updateSummary();
     }
 
-    function escapeHtml(text){
-      if(text === undefined || text === null) return "";
-      return String(text)
-        .replace(/&/g,"&amp;")
-        .replace(/</g,"&lt;")
-        .replace(/>/g,"&gt;")
-        .replace(/"/g,"&quot;")
-        .replace(/'/g,"&#039;");
-    }
-
-    function formatDateForInput(val){
-      if(!val) return "";
-      if(/^\d{4}-\d{2}-\d{2}$/.test(val)) return val;
-      if(/^\d{2}\/\d{2}\/\d{4}$/.test(val)){ let [d,m,y]=val.split("/"); return `${y}-${m.padStart(2,"0")}-${d.padStart(2,"0")}`; }
-      let d=new Date(val); if(!isNaN(d)) return d.toISOString().split("T")[0];
-      if(!isNaN(Number(val))){ let base=new Date(1899,11,30); base.setDate(base.getDate()+Number(val)); return base.toISOString().split("T")[0]; }
-      return "";
-    }
-
-    function updateTenderColor(i){
-      const s=document.getElementById(`status_${i}`); if(!s) return;
-      s.classList.remove("accepted","rejected");
-      if(s.value==="ACCEPTED") s.classList.add("accepted");
-      else if(s.value==="REJECTED") s.classList.add("rejected");
-    }
-
-    function updatePaymentStatus(i){
-      const chequeVal = (document.getElementById(`cheque_${i}`)?.value || "").trim();
-      const sel = document.getElementById(`payment_${i}`);
-      if(sel) sel.value = chequeVal ? "PAID" : "UNPAID";
+    function onChequeChange(i){
+      const cheque = document.getElementById(`cheque_${i}`).value.trim();
+      const payment = document.getElementById(`payment_${i}`);
+      payment.value = cheque ? "PAID" : "UNPAID";
+      toggleButton(i);
       updateSummary();
     }
 
-    function updateSummary(){
-      let paid = 0, unpaid = 0;
-      tableData.forEach((r, i) => {
-        const st = document.getElementById(`payment_${i}`)?.value || r[8] || "";
-        const val = parseFloat(r[6]) || 0;
-        if(st === "PAID") paid += val; else unpaid += val;
-      });
-      document.getElementById("paidCount").textContent = `PAID: ₹${paid.toLocaleString()}`;
-      document.getElementById("unpaidCount").textContent = `UNPAID: ₹${unpaid.toLocaleString()}`;
-    }
-
-    function filterTable(){
-      const search = (document.getElementById("searchInput").value || "").trim().toLowerCase();
-      const allItems = tableData.map((r, idx) => ({ row: r, idx }));
-      if(!search){ renderTable(allItems); return; }
-      const filtered = allItems.filter(({row}) => {
-        return [1,2,4,5].some(c => ((row[c]||"").toString().toLowerCase().includes(search)));
-      });
-      renderTable(filtered);
+    function updateTenderColor(i){
+      const status = document.getElementById(`status_${i}`);
+      status.style.color = status.value === "ACCEPTED" ? "green" : status.value === "REJECTED" ? "red" : "black";
     }
 
     function toggleButton(i){
-      const t = document.getElementById(`status_${i}`)?.value.trim() || "";
-      const c = document.getElementById(`cheque_${i}`)?.value.trim() || "";
-      const d = document.getElementById(`date_${i}`)?.value.trim() || "";
-      const b = document.getElementById(`btn_${i}`);
-      if(!b) return;
-      if(!t && !c && !d){ b.textContent="SAVE"; b.style.background="green"; b.style.color="white"; }
-      else{ b.textContent="UPDATE"; b.style.background="blue"; b.style.color="white"; }
-    }
-
-    function showMessage(text, type){
-      const m = document.getElementById("message");
-      m.textContent = text;
-      m.className = type || "";
-      m.style.display = "block";
-      setTimeout(()=>{ m.style.display = "none"; }, 2500);
-    }
-
-    async function updateRow(i, overrides = {}){
-      const payment = overrides.paymentStatus || document.getElementById(`payment_${i}`)?.value || "";
-      const tender = overrides.tenderStatus || document.getElementById(`status_${i}`)?.value || "";
-      const cheque = overrides.chequeNo || document.getElementById(`cheque_${i}`)?.value || "";
-      const date = overrides.dateVal || document.getElementById(`date_${i}`)?.value || "";
       const btn = document.getElementById(`btn_${i}`);
-      if(btn){ btn.disabled = true; btn.textContent = "Saving..."; }
+      btn.disabled = false;
+    }
+
+    function updateSummary(){
+      let paid=0, unpaid=0;
+      tableData.forEach((row,i)=>{
+        const status = document.getElementById(`payment_${i}`)?.value;
+        const amt = Number(row[6]) || 0;
+        if(status==="PAID") paid+=amt;
+        else unpaid+=amt;
+      });
+      document.getElementById("paidCount").textContent=`PAID: ₹${paid}`;
+      document.getElementById("unpaidCount").textContent=`UNPAID: ₹${unpaid}`;
+    }
+
+    async function updateRow(i){
+      const payload = {
+        action:"updateEarnestMoney",
+        rowIndex:i,
+        paymentStatus:document.getElementById(`payment_${i}`).value,
+        tenderStatus:document.getElementById(`status_${i}`).value,
+        chequeNo:document.getElementById(`cheque_${i}`).value,
+        dateVal:document.getElementById(`date_${i}`).value
+      };
+      showMessage(`Updating row ${i+1}...`,"loading");
       try {
-        const fd = new FormData();
-        fd.append("action","updateEarnestMoney");
-        fd.append("rowIndex", i);
-        fd.append("paymentStatus", payment);
-        fd.append("tenderStatus", tender);
-        fd.append("chequeNo", cheque);
-        fd.append("dateVal", date);
-        const res = await fetch(scriptURL, { method: "POST", body: fd });
-        const result = await res.json();
-        if(result.success){
-          if(btn){ btn.textContent = "Saved ✔"; btn.style.background = "green"; }
-          showMessage(`Row ${result.row} updated ✅`,"success");
-          if(tableData[i]){
-            tableData[i][8] = payment;
-            tableData[i][9] = tender;
-            tableData[i][10] = cheque;
-            tableData[i][11] = date;
-          }
-          updateSummary();
-        } else {
-          if(btn){ btn.textContent = "Failed ✖"; btn.style.background = "red"; }
-          showMessage("Update failed: " + (result.error || "Unknown"), "error");
-        }
+        const res = await fetch(scriptURL, {
+          method:"POST",
+          body:JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if(data.success) showMessage(`Row ${i+1} updated ✅`,"success");
+        else showMessage(`Error: ${data.error}`,"error");
       } catch (err) {
-        if(btn){ btn.textContent = "Error ✖"; btn.style.background = "red"; }
-        showMessage("Network error: " + err.message, "error");
-      } finally {
-        setTimeout(()=>{ if(btn) { btn.disabled = false; toggleButton(i); } }, 1500);
+        showMessage("Update failed ❌","error");
       }
+    }
+
+    function showMessage(msg,type){
+      const m = document.getElementById("message");
+      m.textContent = msg;
+      m.className = type;
+      m.style.display = "block";
+      if(type !== "loading") setTimeout(()=>m.style.display="none",4000);
+    }
+
+    function filterTable(){
+      const val = document.getElementById("searchInput").value.toLowerCase();
+      const rows = document.querySelectorAll("#dataTable tbody tr");
+      rows.forEach((tr,i)=>{
+        const row = tableData[i];
+        const text = [row[1], row[2], formatNitDate(row[4]), row[5]].join(" ").toLowerCase();
+        tr.style.display = text.includes(val) ? "" : "none";
+      });
     }
 
     function openModal(vendor){
@@ -446,87 +403,81 @@
       document.getElementById("modalVendorName").textContent = vendor;
       const tbody = document.querySelector("#modalTable tbody");
       tbody.innerHTML = "";
-      tableData.forEach((r, i) => {
-        if(r[5] === vendor && (r[8] === "UNPAID" || r[8] === "" || r[8] === null || r[8] === undefined)){
-          const tr = document.createElement("tr");
-          tr.innerHTML = `
-            <td>${escapeHtml(r[2]||"")}</td>
-            <td>${escapeHtml(r[3]||"")}</td>
-            <td>${escapeHtml(r[4]||"")}</td>
-            <td>${escapeHtml(r[6]||"")}</td>
-            <td>
-              <select data-index="${i}" class="modal-payment" onchange="updateModalSummary()">
-                <option value="PAID">PAID</option>
-                <option value="UNPAID" selected>UNPAID</option>
-              </select>
-            </td>
-            <td>
-              <select data-index="${i}" class="modal-tender">
-                <option value=""></option>
-                <option value="ACCEPTED">ACCEPTED</option>
-                <option value="REJECTED">REJECTED</option>
-              </select>
-            </td>
-            <td><input type="text" data-index="${i}" class="modal-cheque" oninput="handleModalCheque(this)"></td>
-            <td><input type="date" data-index="${i}" class="modal-date"></td>
-          `;
-          tbody.appendChild(tr);
-        }
+      let paid=0, unpaid=0;
+      tableData.forEach((row,i)=>{
+        if(row[5] !== vendor) return;
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${row[2]}</td>
+          <td>${row[3]}</td>
+          <td>${formatNitDate(row[4])}</td>
+          <td>${row[6]}</td>
+          <td><select id="mPayment_${i}" disabled>
+            <option value="PAID" ${row[7]==="PAID"?"selected":""}>PAID</option>
+            <option value="UNPAID" ${row[7]==="UNPAID"?"selected":""}>UNPAID</option>
+          </select></td>
+          <td><select id="mStatus_${i}">
+            <option value="" ${row[8]===""?"selected":""}></option>
+            <option value="ACCEPTED" ${row[8]==="ACCEPTED"?"selected":""}>ACCEPTED</option>
+            <option value="REJECTED" ${row[8]==="REJECTED"?"selected":""}>REJECTED</option>
+          </select></td>
+          <td><input type="text" id="mCheque_${i}" value="${row[9]||''}" oninput="onModalChequeChange(${i})"></td>
+          <td><input type="date" id="mDate_${i}" value="${row[10]||''}"></td>
+        `;
+        tbody.appendChild(tr);
+        if(row[7]==="PAID") paid+=Number(row[6]||0);
+        else unpaid+=Number(row[6]||0);
       });
-      document.getElementById("vendorModal").style.display = "flex";
-      updateModalSummary();
+      document.getElementById("modalPaid").textContent=`PAID: ₹${paid}`;
+      document.getElementById("modalUnpaid").textContent=`UNPAID: ₹${unpaid}`;
+      document.getElementById("vendorModal").style.display="flex";
     }
 
     function closeModal(){
-      document.getElementById("vendorModal").style.display = "none";
+      document.getElementById("vendorModal").style.display="none";
+      currentVendor = null;
     }
 
-    function handleModalCheque(input){
-      const idx = input.dataset.index;
-      const val = (input.value || "").trim();
-      const paySel = document.querySelector(`.modal-payment[data-index='${idx}']`);
-      if(paySel) paySel.value = val ? "PAID" : "UNPAID";
-      updateModalSummary();
-    }
-
-    function updateModalSummary(){
-      let paid = 0, unpaid = 0;
-      const rows = document.querySelectorAll("#modalTable tbody tr");
-      rows.forEach(r => {
-        const sel = r.querySelector(".modal-payment");
-        const idx = sel?.dataset.index;
-        const status = sel?.value || "UNPAID";
-        const val = parseFloat(tableData[idx]?.[6]) || 0;
-        if(status === "PAID") paid += val; else unpaid += val;
-      });
-      document.getElementById("modalPaid").textContent = `PAID: ₹${paid.toLocaleString()}`;
-      document.getElementById("modalUnpaid").textContent = `UNPAID: ₹${unpaid.toLocaleString()}`;
+    function onModalChequeChange(i){
+      const val = document.getElementById(`mCheque_${i}`).value.trim();
+      const pay = document.getElementById(`mPayment_${i}`);
+      pay.value = val ? "PAID" : "UNPAID";
     }
 
     async function saveModalData(){
-      const saveBtn = document.querySelector("#vendorModal .save-btn");
-      saveBtn.disabled = true;
-      saveBtn.textContent = "Save All - Saving...";
-
-      const rows = document.querySelectorAll("#modalTable tbody tr");
-      for(const r of rows){
-        const idx = r.querySelector(".modal-payment").dataset.index;
-        const payment = r.querySelector(".modal-payment").value;
-        const tender = r.querySelector(".modal-tender").value;
-        const cheque = r.querySelector(".modal-cheque").value;
-        const date = r.querySelector(".modal-date").value;
-        await updateRow(idx, { paymentStatus: payment, tenderStatus: tender, chequeNo: cheque, dateVal: date });
+      if(!currentVendor) return;
+      const payload = { action:"batchUpdateEarnestMoney", data:[] };
+      tableData.forEach((row,i)=>{
+        if(row[5] !== currentVendor) return;
+        const item = {
+          rowIndex: i,
+          paymentStatus: document.getElementById(`mPayment_${i}`).value,
+          tenderStatus: document.getElementById(`mStatus_${i}`).value,
+          chequeNo: document.getElementById(`mCheque_${i}`).value,
+          dateVal: document.getElementById(`mDate_${i}`).value
+        };
+        payload.data.push(item);
+      });
+      showMessage(`Saving ${payload.data.length} rows...`,"loading");
+      try {
+        const res = await fetch(scriptURL, {
+          method:"POST",
+          body:JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if(data.success){
+          showMessage("Modal data saved ✅","success");
+          refreshData();
+          closeModal();
+        } else showMessage(`Error: ${data.error}`,"error");
+      } catch (err) {
+        console.error(err);
+        showMessage("Modal save failed ❌","error");
       }
-
-      saveBtn.textContent = "Save All";
-      saveBtn.disabled = false;
-      showMessage("Data saved successfully ✅","success");
-      closeModal();
-      await loadData();
     }
 
-    window.onload = loadData;
+    // Load on start
+    refreshData();
   </script>
 </body>
 </html>
-
