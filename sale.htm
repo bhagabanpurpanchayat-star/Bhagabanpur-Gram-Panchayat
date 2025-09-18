@@ -23,14 +23,15 @@
     thead { background: #003366; color: #fff; position: sticky; top: 0; z-index: 2; }
 
     /* Vendor Styling */
-    .vendor-list { max-height: 100px; overflow-y: auto; text-align: left; padding-right: 6px; }
+    .vendor-list { max-height: 120px; overflow-y: auto; text-align: left; padding-right: 6px; }
     .vendor-tag { display: block; background: green; color: #fff; font-weight: bold; border-radius: 4px; padding: 2px 6px; margin: 2px 0; font-size: 11px; text-align: left; }
+    .vendor-count { font-size: 11px; font-weight: bold; color: #ffd700; margin-bottom: 4px; display: block; }
 
     /* Narrow Vendor column */
     #dataTable th:nth-child(14),
     #dataTable td:nth-child(14) {
-      width: 150px;
-      max-width: 150px;
+      width: 180px;
+      max-width: 180px;
     }
 
     .choices { min-width: 200px; font-size: 12px; text-align: left; }
@@ -56,10 +57,14 @@
     @keyframes popIn { from {transform:scale(0.9);opacity:0;} to{transform:scale(1);opacity:1;} }
     .blink { animation: blinkAnim 1s infinite; }
     @keyframes blinkAnim { 50%{opacity:0.4;} }
+
+    /* Stamp top-right */
+    .stamp { position: absolute; top: 20px; right: 20px; background: #444; padding: 10px 14px; border-radius: 8px; color: #fff; font-size: 13px; font-weight: bold; }
   </style>
 </head>
 <body>
   <h2>Sale of Tender Form</h2>
+  <div class="stamp" id="stampBox">Loading counts...</div>
 
   <div id="message"></div>
   <div id="progressPopup"><div><span id="progressMessage">Processing...</span></div></div>
@@ -96,7 +101,7 @@
   </table>
 
   <script>
-    const scriptURL = "https://script.google.com/macros/s/AKfycbxgOwETYg5roDTEnBqy8qQGnC-FNzx2iOz5qYVZE5TySfDHmmEb_uEx2DL4c4GKbNEwMQ/exec"; 
+    const scriptURL = "https://script.google.com/macros/s/AKfycbyUp4_hf-iY_9eQdKBl-egGp48CbZatyhWx1gRrHhhbOO_cglNUBDBOQhczNPtDir6Z9w/exec"; 
     let tableData = [];
     let vendorOptions = [];
 
@@ -118,6 +123,7 @@
       vendorOptions = await vRes.json();
       tableData = await tRes.json();
       renderTable(tableData);
+      updateStamp(tableData);
     }
 
     function formatTimestamp(raw){ if(!raw) return ""; let d=new Date(raw); if(!isNaN(d)) return d.toLocaleString("en-US",{hour12:false}); return raw; }
@@ -138,8 +144,24 @@
 
         const tdVendor=document.createElement("td");
         if(vendorsArr.length>0){
-          const container=document.createElement("div"); container.className="vendor-list"; vendorsArr.forEach(v=>{const span=document.createElement("span"); span.className="vendor-tag"; span.textContent=v; container.appendChild(span);}); tdVendor.appendChild(container);
-        } else { tdVendor.appendChild(createVendorSelect([],idx)); }
+          const container=document.createElement("div"); container.className="vendor-list";
+
+          // ✅ Row-wise vendor count
+          const count=document.createElement("span");
+          count.className="vendor-count";
+          count.textContent=`Vendors: ${vendorsArr.length}`;
+          container.appendChild(count);
+
+          vendorsArr.forEach(v=>{
+            const span=document.createElement("span");
+            span.className="vendor-tag";
+            span.textContent=v;
+            container.appendChild(span);
+          });
+          tdVendor.appendChild(container);
+        } else {
+          tdVendor.appendChild(createVendorSelect([],idx));
+        }
         tr.appendChild(tdVendor);
 
         const tdAction=document.createElement("td");
@@ -181,23 +203,36 @@
         if(result.success){
           tdVendor.innerHTML="";
           const container=document.createElement("div"); container.className="vendor-list";
-          vendors.forEach(v=>{ const span=document.createElement("span"); span.className="vendor-tag"; span.textContent=v; container.appendChild(span);});
+
+          const count=document.createElement("span");
+          count.className="vendor-count";
+          count.textContent=`Vendors: ${vendors.length}`;
+          container.appendChild(count);
+
+          vendors.forEach(v=>{
+            const span=document.createElement("span");
+            span.className="vendor-tag";
+            span.textContent=v;
+            container.appendChild(span);
+          });
           tdVendor.appendChild(container);
+
           btn.textContent="Update"; btn.classList.add("btn-update");
           btn.onclick=()=>switchToEditable(vendors,rowIndex,tdVendor,btn);
 
-          // Extract progress
-          const progressArray=result.progress || [];
-          for(let i=0;i<progressArray.length;i++){
-            showPopup(`Extracting ${progressArray[i].current}/${progressArray[i].total}`,true);
-            await new Promise(r=>setTimeout(r,150));
-          }
-          showPopup("Done ✅");
-          setTimeout(()=>hidePopup(),1500);
+          showPopup("Done ✅"); setTimeout(()=>hidePopup(),1500);
           showMessage("Vendors saved & extracted ✅","success");
+          updateStamp(tableData); // refresh stamp
         } else { showMessage("Save failed","error"); }
       } catch(err){ showMessage("Error: "+err.message,"error"); }
       btn.disabled=false;
+    }
+
+    function updateStamp(data){
+      const nitNos = data.map(r=>valueToString(r[4])).filter(v=>v);
+      const totalSchemes = nitNos.length;
+      const uniqueNITs = new Set(nitNos).size;
+      document.getElementById("stampBox").textContent = `Total NITs: ${uniqueNITs} | Total Schemes: ${totalSchemes}`;
     }
 
     function filterTable(){
@@ -213,9 +248,10 @@
                 siteDetails.includes(q) || fund.includes(q));
       });
       renderTable(filtered);
+      updateStamp(filtered);
     }
 
-    function clearSearch(){ document.getElementById("searchInput").value=""; renderTable(tableData); }
+    function clearSearch(){ document.getElementById("searchInput").value=""; renderTable(tableData); updateStamp(tableData); }
     function showMessage(text,type){ const msg=document.getElementById("message"); msg.textContent=text; msg.className=type; msg.style.display="block"; setTimeout(()=>{msg.style.display="none";},2200); }
 
     loadData();
