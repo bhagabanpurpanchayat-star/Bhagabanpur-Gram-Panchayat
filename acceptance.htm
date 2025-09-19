@@ -92,6 +92,15 @@
       font-size: 12px;
       background-color: #28a745;
       color: white;
+      transition: all 0.3s ease;
+      min-width: 60px;
+    }
+    button.action-btn.saving {
+      background-color: #ffc107;
+      color: #000;
+    }
+    button.action-btn.saved {
+      background-color: #17a2b8;
     }
     #message {
       margin-bottom: 10px;
@@ -243,7 +252,7 @@
 
       <div class="btn-bar">
         <button class="close-btn" onclick="closeModal()">Close</button>
-        <button class="save-btn" onclick="saveModalData()">Save All</button>
+        <button class="save-btn" id="modalSaveBtn" onclick="saveModalData()">Save All</button>
       </div>
     </div>
   </div>
@@ -252,6 +261,7 @@
     const scriptURL = "https://script.google.com/macros/s/AKfycbxvnmaasTpH-xGlbaX6BIgSGZ7qlnTLD7uPp5my_xYfleZAAmf1eveP_vVW_N67K_VJrw/exec";
     let tableData = [];
     let currentVendor = null;
+    let modalRows = []; // Track rows in modal
 
     function formatTimestamp(val){
       if(!val) return "";
@@ -263,9 +273,45 @@
 
     function formatNitDate(val){
       if(!val) return "";
+      
+      // Handle DD/MM/YYYY format from Google Sheets
+      if (typeof val === 'string' && val.includes('/')) {
+        const parts = val.split('/');
+        if (parts.length === 3) {
+          // Check if it's in DD/MM/YYYY format (day > 12)
+          if (parts[0] > 12) {
+            return val; // Return as-is if it's already DD/MM/YYYY
+          } else {
+            // Assume it's MM/DD/YYYY and convert to DD/MM/YYYY
+            return `${parts[1]}/${parts[0]}/${parts[2]}`;
+          }
+        }
+      }
+      
+      // Handle JavaScript Date objects
       const d = new Date(val);
       if(isNaN(d)) return val;
-      return `${d.getMonth()+1}/${d.getDate()}/${d.getFullYear()}`;
+      return `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
+    }
+
+    function parseDateForInput(val) {
+      if (!val) return "";
+      
+      // Handle DD/MM/YYYY format from Google Sheets
+      if (typeof val === 'string' && val.includes('/')) {
+        const parts = val.split('/');
+        if (parts.length === 3) {
+          // Convert DD/MM/YYYY to YYYY-MM-DD for input[type=date]
+          return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+        }
+      }
+      
+      // Handle JavaScript Date objects
+      const d = new Date(val);
+      if (isNaN(d)) return "";
+      
+      // Format as YYYY-MM-DD for input[type=date]
+      return d.toISOString().split('T')[0];
     }
 
     async function refreshData(){
@@ -316,7 +362,7 @@
             <option value="REJECTED" ${row[8]==="REJECTED"?"selected":""}>REJECTED</option>
           </select></td>
           <td><input type="text" id="cheque_${i}" value="${row[9]||''}" oninput="onChequeChange(${i})"></td>
-          <td><input type="date" id="date_${i}" value="${row[10]||''}" oninput="toggleButton(${i})"></td>
+          <td><input type="date" id="date_${i}" value="${parseDateForInput(row[10])}" oninput="toggleButton(${i})"></td>
           <td><button class="action-btn" id="btn_${i}" onclick="updateRow(${i})">Save</button></td>
         `;
 
@@ -359,6 +405,14 @@
     }
 
     async function updateRow(i){
+      const btn = document.getElementById(`btn_${i}`);
+      const originalText = btn.textContent;
+      
+      // Update button to saving state
+      btn.textContent = "Saving...";
+      btn.classList.add('saving');
+      btn.disabled = true;
+      
       const payload = {
         action:"updateEarnestMoney",
         rowIndex:i,
@@ -374,10 +428,31 @@
           body:JSON.stringify(payload)
         });
         const data = await res.json();
-        if(data.success) showMessage(`Row ${i+1} updated ✅`,"success");
-        else showMessage(`Error: ${data.error}`,"error");
+        if(data.success) {
+          showMessage(`Row ${i+1} updated ✅`,"success");
+          
+          // Update button to saved state temporarily
+          btn.textContent = "Saved";
+          btn.classList.remove('saving');
+          btn.classList.add('saved');
+          
+          // Revert button after 2 seconds
+          setTimeout(() => {
+            btn.textContent = originalText;
+            btn.classList.remove('saved');
+            btn.disabled = false;
+          }, 2000);
+        } else {
+          showMessage(`Error: ${data.error}`,"error");
+          btn.textContent = originalText;
+          btn.classList.remove('saving');
+          btn.disabled = false;
+        }
       } catch (err) {
         showMessage("Update failed ❌","error");
+        btn.textContent = originalText;
+        btn.classList.remove('saving');
+        btn.disabled = false;
       }
     }
 
@@ -404,9 +479,12 @@
       document.getElementById("modalVendorName").textContent = vendor;
       const tbody = document.querySelector("#modalTable tbody");
       tbody.innerHTML = "";
-      let paid=0, unpaid=0;
+      modalRows = []; // Reset modal rows
+      
+      // Filter to show only unpaid rows for this vendor
       tableData.forEach((row,i)=>{
-        if(row[5] !== vendor) return;
+        if(row[5] !== vendor || row[7] === "PAID") return;
+        modalRows.push(i); // Track which rows are in the modal
         const tr = document.createElement("tr");
         tr.innerHTML = `
           <td>${row[2]}</td>
@@ -423,15 +501,12 @@
             <option value="REJECTED" ${row[8]==="REJECTED"?"selected":""}>REJECTED</option>
           </select></td>
           <td><input type="text" id="mCheque_${i}" value="${row[9]||''}" oninput="onModalChequeChange(${i})"></td>
-          <td><input type="date" id="mDate_${i}" value="${row[10]||''}"></td>
+          <td><input type="date" id="mDate_${i}" value="${parseDateForInput(row[10])}"></td>
         `;
         tbody.appendChild(tr);
         onModalChequeChange(i); // force sync Payment with Cheque
-        if(document.getElementById(`mPayment_${i}`).value==="PAID") paid+=Number(row[6]||0);
-        else unpaid+=Number(row[6]||0);
       });
-      document.getElementById("modalPaid").textContent=`PAID: ₹${paid}`;
-      document.getElementById("modalUnpaid").textContent=`UNPAID: ₹${unpaid}`;
+      updateModalSummary();
       document.getElementById("vendorModal").style.display="flex";
     }
 
@@ -444,13 +519,36 @@
       const val = document.getElementById(`mCheque_${i}`).value.trim();
       const pay = document.getElementById(`mPayment_${i}`);
       pay.value = val ? "PAID" : "UNPAID";
+      updateModalSummary();
+    }
+
+    function updateModalSummary(){
+      let paid=0, unpaid=0;
+      
+      // Calculate based on modal data
+      modalRows.forEach(i => {
+        const payment = document.getElementById(`mPayment_${i}`).value;
+        const amt = Number(tableData[i][6]) || 0;
+        if(payment === "PAID") paid += amt;
+        else unpaid += amt;
+      });
+      
+      document.getElementById("modalPaid").textContent=`PAID: ₹${paid}`;
+      document.getElementById("modalUnpaid").textContent=`UNPAID: ₹${unpaid}`;
     }
 
     async function saveModalData(){
       if(!currentVendor) return;
+      
+      const btn = document.getElementById('modalSaveBtn');
+      const originalText = btn.textContent;
+      
+      // Update button to saving state
+      btn.textContent = "Saving...";
+      btn.disabled = true;
+      
       const payload = { action:"batchUpdateEarnestMoney", data:[] };
-      tableData.forEach((row,i)=>{
-        if(row[5] !== currentVendor) return;
+      modalRows.forEach(i => {
         const item = {
           rowIndex: i,
           paymentStatus: document.getElementById(`mPayment_${i}`).value,
@@ -469,12 +567,27 @@
         const data = await res.json();
         if(data.success){
           showMessage("Modal data saved ✅","success");
-          refreshData();
-          closeModal();
-        } else showMessage(`Error: ${data.error}`,"error");
+          
+          // Update button to saved state
+          btn.textContent = "Saved";
+          
+          // Refresh data and close modal after a delay
+          setTimeout(() => {
+            refreshData();
+            closeModal();
+            btn.textContent = originalText;
+            btn.disabled = false;
+          }, 1500);
+        } else {
+          showMessage(`Error: ${data.error}`,"error");
+          btn.textContent = originalText;
+          btn.disabled = false;
+        }
       } catch (err) {
         console.error(err);
         showMessage("Modal save failed ❌","error");
+        btn.textContent = originalText;
+        btn.disabled = false;
       }
     }
 
