@@ -32,10 +32,23 @@
     .toolbar {
       display: flex;
       justify-content: flex-end;
-      align-items: center;
+      align-items: flex-start;
       margin-bottom: 10px;
       gap: 10px;
     }
+    .stamp {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      background: rgba(255,255,255,0.5);
+      border: 1px solid rgba(0,0,0,0.1);
+      border-radius: 10px;
+      padding: 6px 12px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #222;
+    }
+    .stamp span { margin: 2px 0; }
     .refresh-btn {
       background: rgba(255, 255, 255, 0.3);
       border: 1px solid rgba(0,0,0,0.15);
@@ -147,6 +160,12 @@
   <h2>Polling Station Data Entry Module</h2>
 
   <div class="toolbar">
+    <div class="stamp">
+      <span>🚹 Male Voter: <b id="maleSum">0</b></span>
+      <span>👩 Female Voter: <b id="femaleSum">0</b></span>
+      <span>⚧ Other Voter: <b id="otherSum">0</b></span>
+      <span>🗳️ Total Voter: <b id="totalSum">0</b></span>
+    </div>
     <div class="progress-wrapper">
       <div class="progress-bar"><div class="progress-bar-fill"></div></div>
       <div class="progress-text">0%</div>
@@ -213,6 +232,7 @@
   async function refreshData() {
     startProgress();
     await loadData();
+    updateSums();
     endProgress();
   }
 
@@ -245,7 +265,7 @@
           <button type="button" class="delete-btn" onclick="deleteRow(this)">🗑️ Delete</button>
         </td>`;
       tbody.appendChild(tr);
-      autoCalc(tr.querySelector('input[name="male[]"]')); // recalc on load
+      autoCalc(tr.querySelector('input[name="male[]"]'));
     });
   }
 
@@ -277,6 +297,20 @@
     const female = parseInt(row.querySelector('input[name="female[]"]').value) || 0;
     const third = parseInt(row.querySelector('input[name="third[]"]').value) || 0;
     row.querySelector('input[name="total[]"]').value = male + female + third;
+    updateSums();
+  }
+
+  function updateSums() {
+    let maleSum = 0, femaleSum = 0, otherSum = 0, totalSum = 0;
+    document.querySelectorAll('input[name="male[]"]').forEach(el => maleSum += parseInt(el.value) || 0);
+    document.querySelectorAll('input[name="female[]"]').forEach(el => femaleSum += parseInt(el.value) || 0);
+    document.querySelectorAll('input[name="third[]"]').forEach(el => otherSum += parseInt(el.value) || 0);
+    document.querySelectorAll('input[name="total[]"]').forEach(el => totalSum += parseInt(el.value) || 0);
+
+    document.getElementById("maleSum").textContent = maleSum;
+    document.getElementById("femaleSum").textContent = femaleSum;
+    document.getElementById("otherSum").textContent = otherSum;
+    document.getElementById("totalSum").textContent = totalSum;
   }
 
   function handleSaveClick(btn, isExisting) {
@@ -297,6 +331,7 @@
     const res = await fetch(endpoint, { method: "POST", body: formData });
     btn.textContent = "💾 Save"; btn.disabled = false;
     console.log(await res.text());
+    updateSums();
   }
 
   async function updateRow(btn) {
@@ -311,6 +346,7 @@
     const res = await fetch(endpoint, { method: "POST", body: formData });
     btn.textContent = "✏️ Update"; btn.disabled = false;
     console.log(await res.text());
+    updateSums();
   }
 
   async function deleteRow(btn) {
@@ -324,6 +360,8 @@
     const res = await fetch(endpoint, { method: "POST", body: formData });
     btn.textContent = "🗑️ Delete"; btn.disabled = false;
     console.log(await res.text());
+    row.remove();
+    updateSums();
   }
 
   window.addEventListener("load", () => refreshData());
