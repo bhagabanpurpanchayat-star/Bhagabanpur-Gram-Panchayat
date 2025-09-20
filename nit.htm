@@ -19,613 +19,321 @@
       background: linear-gradient(135deg, #0b0b0b, #151515, #1c1c1c);
       color: var(--muted);
     }
-
-    header {
-      height: 56px;
-      background: linear-gradient(90deg,var(--sidebar),#13232f);
-      display:flex;
-      align-items:center;
-      padding:0 18px;
-      color:#fff;
-      box-shadow:0 2px 6px rgba(0,0,0,0.6);
-      font-size:18px;
-      font-weight:bold;
-    }
-
+    header { height:56px; background: linear-gradient(90deg,var(--sidebar),#13232f); display:flex; align-items:center; padding:0 18px; color:#fff; box-shadow:0 2px 6px rgba(0,0,0,0.6); font-size:18px; font-weight:bold; }
     main { padding:18px; }
 
-    /* Glassmorphic Neon Card */
-    .card {
-      background: var(--card-bg);
-      padding:16px;
-      border-radius:14px;
-      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6),
-                  0 0 12px var(--neon-blue),
-                  0 0 24px rgba(0, 217, 255, 0.3);
-      backdrop-filter: blur(15px);
-      -webkit-backdrop-filter: blur(15px);
-      border: 1px solid var(--neon-blue);
-      transition: all 0.3s ease-in-out;
-    }
+    .card { background: var(--card-bg); padding:16px; border-radius:14px; box-shadow: 0 8px 25px rgba(0,0,0,0.6), 0 0 12px var(--neon-blue), 0 0 24px rgba(0,217,255,0.3); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border:1px solid var(--neon-blue); transition: all 0.3s ease-in-out; }
 
-    .page-title {
-      font-size:28px;
-      font-weight:700;
-      margin-bottom:12px;
-      color:#fff;
-      text-align:center;
-      animation: pulseTitle 2s infinite ease-in-out;
-    }
+    .page-title { font-size:28px; font-weight:700; margin-bottom:12px; color:#fff; text-align:center; animation: pulseTitle 2s infinite ease-in-out; }
+    @keyframes pulseTitle { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
 
-    @keyframes pulseTitle {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.1); }
-    }
-
-    /* Form Layout */
     .form-grid { display:grid; grid-template-columns:repeat(12,1fr); gap:10px; margin-bottom:12px; }
     .field { grid-column:span 2; }
-    label {
-      display:block;
-      font-size:12px;
-      margin-bottom:4px;
-      color:var(--muted);
-      text-align:center;
-    }
-    input[type=text], input[type=date] {
-      width:100%;
-      padding:4px 6px;
-      border-radius:4px;
-      border:1px solid var(--neon-blue);
-      background:rgba(255,255,255,0.05);
-      color:#fff;
-      font-size:13px;
-      height:26px;
-      text-align:center;
-      backdrop-filter: blur(8px);
-      transition: all 0.3s ease-in-out;
-      box-shadow: 0 0 5px rgba(0, 217, 255, 0.3);
-    }
-    input[type=text]:focus, input[type=date]:focus {
-      box-shadow: 0 0 10px var(--neon-blue);
-      border-color: var(--neon-blue);
-    }
+    label { display:block; font-size:12px; margin-bottom:4px; color:var(--muted); text-align:center; }
+    input[type=text], input[type=date] { width:100%; padding:4px 6px; border-radius:4px; border:1px solid var(--neon-blue); background:rgba(255,255,255,0.05); color:#fff; font-size:13px; height:26px; text-align:center; backdrop-filter: blur(8px); transition: all 0.3s ease-in-out; box-shadow: 0 0 5px rgba(0,217,255,0.3); }
+    input[type=text]:focus, input[type=date]:focus { box-shadow: 0 0 10px var(--neon-blue); border-color: var(--neon-blue); }
 
-    /* Scheme Count Badge */
-    #schemeCount {
-      float: right;
-      background-color: rgba(0, 217, 255, 0.15);
-      color: white;
-      padding: 5px 12px;
-      border-radius: 16px;
-      font-weight: bold;
-      font-size: 13px;
-      margin-bottom: 6px;
-      border: 1px solid var(--neon-blue);
-      box-shadow: 0 0 8px var(--neon-blue);
-    }
+    #schemeCount { float: right; background-color: rgba(0,217,255,0.15); color:white; padding:5px 12px; border-radius:16px; font-weight:bold; font-size:13px; margin-bottom:6px; border:1px solid var(--neon-blue); box-shadow:0 0 8px var(--neon-blue); }
 
-    /* Table Styling */
-    .schemes, .sheet-table-container {
-      margin-top:8px;
-      border-radius:8px;
-      overflow:auto;
-      border:1px solid var(--neon-blue);
-      max-height:280px;
-      background: rgba(255, 255, 255, 0.05);
-      backdrop-filter: blur(12px);
-      box-shadow: 0 0 8px var(--neon-blue), 0 6px 20px rgba(0,0,0,0.5);
-    }
-    table {
-      width:100%;
-      border-collapse:collapse;
-      font-size:12px;
-      color:#fff;
-      table-layout:fixed;
-    }
-    thead th {
-      background: rgba(43, 74, 99, 0.55);
-      padding:6px 4px;
-      text-align:center;
-      word-wrap:break-word;
-      white-space:normal;
-      position:sticky;
-      top:0;
-      z-index:2;
-      backdrop-filter: blur(8px);
-      border-bottom: 1px solid var(--neon-blue);
-      box-shadow: 0 0 8px rgba(0, 217, 255, 0.3);
-    }
-    tbody tr {
-      transition: all 0.2s ease;
-    }
-    tbody tr:hover {
-      background: rgba(0, 217, 255, 0.08);
-      cursor: pointer;
-      box-shadow: inset 0 0 6px var(--neon-blue);
-    }
-    tbody tr.selected {
-      background: rgba(0, 217, 255, 0.15);
-      box-shadow: inset 0 0 8px var(--neon-blue);
-    }
-    tbody td {
-      padding:4px 3px;
-      border-top:1px solid rgba(255,255,255,0.05);
-      vertical-align:middle;
-      text-align:center;
-      word-wrap:break-word;
-      white-space:normal;
-    }
-    .table-input {
-      width:100%;
-      padding:2px 3px;
-      border-radius:3px;
-      border:1px solid var(--neon-blue);
-      background:rgba(255,255,255,0.06);
-      color:#fff;
-      font-size:12px;
-      height:22px;
-      text-align:center;
-      backdrop-filter: blur(6px);
-      box-shadow: 0 0 5px rgba(0, 217, 255, 0.3);
-    }
+    .schemes, .sheet-table-container { margin-top:8px; border-radius:8px; overflow:auto; border:1px solid var(--neon-blue); max-height:280px; background: rgba(255,255,255,0.05); backdrop-filter: blur(12px); box-shadow: 0 0 8px var(--neon-blue), 0 6px 20px rgba(0,0,0,0.5); }
+    table { width:100%; border-collapse:collapse; font-size:12px; color:#fff; table-layout:fixed; }
+    thead th { background: rgba(43,74,99,0.55); padding:6px 4px; text-align:center; word-wrap:break-word; white-space:normal; position:sticky; top:0; z-index:2; backdrop-filter: blur(8px); border-bottom:1px solid var(--neon-blue); box-shadow:0 0 8px rgba(0,217,255,0.3); }
+    tbody tr { transition: all 0.2s ease; }
+    tbody tr:hover { background: rgba(0,217,255,0.08); cursor:pointer; box-shadow: inset 0 0 6px var(--neon-blue); }
+    tbody tr.selected { background: rgba(0,217,255,0.15); box-shadow: inset 0 0 8px var(--neon-blue); }
+    tbody td { padding:4px 3px; border-top:1px solid rgba(255,255,255,0.05); vertical-align:middle; text-align:center; word-wrap:break-word; white-space:normal; }
+    .table-input { width:100%; padding:2px 3px; border-radius:3px; border:1px solid var(--neon-blue); background:rgba(255,255,255,0.06); color:#fff; font-size:12px; height:22px; text-align:center; backdrop-filter: blur(6px); box-shadow: 0 0 5px rgba(0,217,255,0.3); }
 
-    /* Buttons */
-    .btn {
-      padding:6px 12px;
-      border-radius:4px;
-      border:1px solid var(--neon-blue);
-      cursor:pointer;
-      font-weight:600;
-      font-size:13px;
-      transition: 0.3s ease-in-out;
-      box-shadow: 0 0 8px rgba(0, 217, 255, 0.4);
-    }
+    .btn { padding:6px 12px; border-radius:4px; border:1px solid var(--neon-blue); cursor:pointer; font-weight:600; font-size:13px; transition:0.3s ease-in-out; box-shadow:0 0 8px rgba(0,217,255,0.4); }
     .btn.primary { background:#0ca678; color:#fff; }
-    .btn.primary:hover {
-      background:#09996b;
-      box-shadow: 0 0 12px var(--neon-blue);
-    }
+    .btn.primary:hover { background:#09996b; box-shadow:0 0 12px var(--neon-blue); }
     .btn.danger { background:#e53935; color:white; }
-    .btn.danger:hover {
-      background:#c62828;
-      box-shadow: 0 0 12px var(--neon-blue);
-    }
+    .btn.danger:hover { background:#c62828; box-shadow:0 0 12px var(--neon-blue); }
 
-    /* Search Box */
-    #searchBox {
-      width:100%;
-      padding:6px;
-      border-radius:4px;
-      margin-bottom:10px;
-      border:1px solid var(--neon-blue);
-      background:rgba(255,255,255,0.06);
-      color:#fff;
-      backdrop-filter: blur(8px);
-      box-shadow: 0 0 6px rgba(0, 217, 255, 0.3);
-    }
-    #searchBox:focus {
-      box-shadow: 0 0 10px var(--neon-blue);
-    }
+    #searchBox { width:100%; padding:6px; border-radius:4px; margin-bottom:10px; border:1px solid var(--neon-blue); background:rgba(255,255,255,0.06); color:#fff; backdrop-filter: blur(8px); box-shadow:0 0 6px rgba(0,217,255,0.3); }
+    #searchBox:focus { box-shadow:0 0 10px var(--neon-blue); }
 
-    #insertBtn {
-      margin-top:8px;
-      padding:8px;
-      border-radius:4px;
-      border:1px solid var(--neon-blue);
-      cursor:not-allowed;
-      background:#888;
-      color:#fff;
-      font-weight:600;
-      box-shadow: 0 3px 12px rgba(0,0,0,0.4), 0 0 8px var(--neon-blue);
-    }
-    #insertBtn.active {
-      cursor:pointer;
-      background:#0ca678;
-      box-shadow: 0 0 12px var(--neon-blue);
-    }
+    #insertBtn { margin-top:8px; padding:8px; border-radius:4px; border:1px solid var(--neon-blue); cursor:not-allowed; background:#888; color:#fff; font-weight:600; box-shadow:0 3px 12px rgba(0,0,0,0.4),0 0 8px var(--neon-blue); }
+    #insertBtn.active { cursor:pointer; background:#0ca678; box-shadow:0 0 12px var(--neon-blue); }
 
-    /* Success Row Animation */
-    @keyframes rowHighlight {
-      0% { background-color: rgba(0, 255, 0, 0.4); }
-      100% { background-color: transparent; }
-    }
-    .highlight {
-      animation: rowHighlight 1s ease-out;
-    }
+    @keyframes rowHighlight { 0% { background-color: rgba(0,255,0,0.4); } 100% { background-color: transparent; } }
+    .highlight { animation: rowHighlight 1s ease-out; }
 
-    /* Save Button Pulse Animation */
-    .pulse {
-      animation: pulseBtn 1s infinite;
-    }
-    @keyframes pulseBtn {
-      0% { transform: scale(1); box-shadow: 0 0 8px var(--neon-blue); }
-      50% { transform: scale(1.05); box-shadow: 0 0 16px var(--neon-blue); }
-      100% { transform: scale(1); box-shadow: 0 0 8px var(--neon-blue); }
-    }
+    .pulse { animation: pulseBtn 1s infinite; }
+    @keyframes pulseBtn { 0% { transform: scale(1); box-shadow:0 0 8px var(--neon-blue); } 50% { transform: scale(1.05); box-shadow:0 0 16px var(--neon-blue); } 100% { transform: scale(1); box-shadow:0 0 8px var(--neon-blue); } }
 
-    /* Save status next to button */
-    .save-status {
-      margin-left:12px;
-      font-weight:700;
-      color: var(--neon-blue);
-      vertical-align: middle;
-    }
+    .save-status { margin-left:12px; font-weight:700; color: var(--neon-blue); vertical-align: middle; }
   </style>
 </head>
 <body>
-  <main>
-    <div class="page-title">Prepare NIT</div>
-    <div class="card">
-      <form id="nitForm">
-        <div class="form-grid">
-          <div class="field"><label>Financial Year</label><input type="text" name="fyear"/></div>
-          <div class="field"><label>Memo No</label><input type="text" name="memo"/></div>
-          <div class="field"><label>Memo Date</label><input type="date" name="memodate"/></div>
-          <div class="field"><label>NIT No</label><input type="text" name="nit"/></div>
-          <div class="field"><label>NIT Date</label><input type="date" name="date"/></div>
-        </div>
+<main>
+  <div class="page-title">Prepare NIT</div>
+  <div class="card">
+    <form id="nitForm">
+      <div class="form-grid">
+        <div class="field"><label>Financial Year</label><input type="text" name="fyear"/></div>
+        <div class="field"><label>Memo No</label><input type="text" name="memo"/></div>
+        <div class="field"><label>Memo Date</label><input type="date" name="memodate"/></div>
+        <div class="field"><label>NIT No</label><input type="text" name="nit"/></div>
+        <div class="field"><label>NIT Date</label><input type="date" name="date"/></div>
+      </div>
 
-        <h3>Select Work from Action Plan</h3>
-        <input type="text" id="searchBox" placeholder="Search by Activity ID, Work Name, or Both..." />
-        <div class="sheet-table-container">
-          <table class="sheet-table">
-            <thead>
-              <tr>
-                <th style="width:80px;">Activity ID</th>
-                <th style="width:300px;">Name of the work</th>
-                <th style="width:160px;">Site details</th>
-                <th style="width:140px;">Source of Fund</th>
-                <th style="width:120px;">Tendered Amount</th>
-              </tr>
-            </thead>
-            <tbody id="sheetData"></tbody>
-          </table>
-        </div>
-        <button id="insertBtn" type="button">Insert</button>
+      <h3>Select Work from Action Plan</h3>
+      <input type="text" id="searchBox" placeholder="Search by Activity ID, Work Name, or Both..." />
+      <div class="sheet-table-container">
+        <table class="sheet-table">
+          <thead>
+            <tr>
+              <th style="width:80px;">Activity ID</th>
+              <th style="width:300px;">Name of the work</th>
+              <th style="width:160px;">Site details</th>
+              <th style="width:140px;">Source of Fund</th>
+              <th style="width:120px;">Tendered Amount</th>
+            </tr>
+          </thead>
+          <tbody id="sheetData"></tbody>
+        </table>
+      </div>
+      <button id="insertBtn" type="button">Insert</button>
 
-        <div id="schemeCount">Scheme Count: 0</div>
+      <div id="schemeCount">Scheme Count: 0</div>
 
-        <div class="schemes">
-          <table>
-            <thead>
-              <tr>
-                <th style="width:80px;">Activity ID</th>
-                <th style="width:320px;">Name of the work</th>
-                <th style="width:160px;">Site details</th>
-                <th style="width:140px;">Source of Fund</th>
-                <th style="width:120px;">Tendered Amount</th>
-                <th style="width:120px;">Tender Form Price</th>
-                <th style="width:120px;">Earnest Money</th>
-                <th style="width:80px;">Action</th>
-              </tr>
-            </thead>
-            <tbody id="schemesBody"></tbody>
-          </table>
-        </div>
+      <div class="schemes">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:80px;">Activity ID</th>
+              <th style="width:320px;">Name of the work</th>
+              <th style="width:160px;">Site details</th>
+              <th style="width:140px;">Source of Fund</th>
+              <th style="width:120px;">Tendered Amount</th>
+              <th style="width:120px;">Tender Form Price</th>
+              <th style="width:120px;">Earnest Money</th>
+              <th style="width:80px;">Action</th>
+            </tr>
+          </thead>
+          <tbody id="schemesBody"></tbody>
+        </table>
+      </div>
 
-        <div style="margin-top:12px; display:flex; align-items:center;">
-          <button type="submit" class="btn primary">Save & Update</button>
-          <span id="saveStatus" class="save-status"></span>
-        </div>
-      </form>
-    </div>
-  </main>
+      <div style="margin-top:12px; display:flex; align-items:center;">
+        <button type="submit" class="btn primary">Save & Update</button>
+        <span id="saveStatus" class="save-status"></span>
+      </div>
+    </form>
+  </div>
+</main>
 
-  <audio id="successSound" preload="auto" src="https://assets.mixkit.co/sfx/preview/mixkit-correct-answer-tone-2870.mp3"></audio>
+<audio id="successSound" preload="auto" src="https://assets.mixkit.co/sfx/preview/mixkit-correct-answer-tone-2870.mp3"></audio>
 
-  <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbxU0xeUMtIJ48gKFMCSe6EjAjjdP43S0FyIxTRhoWZmDnKksJOY35ArJNdmpiI5s6zFtQ/exec"; // ◀︎ replace with your deployed Apps Script Web App URL
+<script>
+const API_URL = "https://script.google.com/macros/s/AKfycbxU0xeUMtIJ48gKFMCSe6EjAjjdP43S0FyIxTRhoWZmDnKksJOY35ArJNdmpiI5s6zFtQ/exec";
 
-    const sheetDataBody = document.getElementById("sheetData");
-    const schemesBody = document.getElementById("schemesBody");
-    const insertBtn = document.getElementById("insertBtn");
-    const searchBox = document.getElementById("searchBox");
-    const schemeCount = document.getElementById("schemeCount");
-    const successSound = document.getElementById("successSound");
-    const saveStatus = document.getElementById("saveStatus");
+const sheetDataBody = document.getElementById("sheetData");
+const schemesBody = document.getElementById("schemesBody");
+const insertBtn = document.getElementById("insertBtn");
+const searchBox = document.getElementById("searchBox");
+const schemeCount = document.getElementById("schemeCount");
+const successSound = document.getElementById("successSound");
+const saveStatus = document.getElementById("saveStatus");
 
-    const selectedActIds = new Set();
-    const sheetDataMap = new Map();
-    let sheetData = [];
+const selectedActIds = new Set();
+const sheetDataMap = new Map();
+let sheetData = [];
 
-    async function fetchAndLoad() {
-      try {
-        const res = await fetch(API_URL);
-        sheetData = await res.json();
-        sheetDataMap.clear();
-        sheetData.forEach(r => {
-          const key = String(r.actId ?? "").trim();
-          if (key) sheetDataMap.set(key, r);
-        });
-        insertBtn.disabled = true;
-        loadData(sheetData);
-      } catch (err) {
-        console.error("Failed to fetch sheet data:", err);
-      }
+async function fetchAndLoad() {
+  try {
+    const res = await fetch(API_URL);
+    sheetData = await res.json();
+    sheetDataMap.clear();
+    sheetData.forEach(r => { const key = String(r.actId ?? "").trim(); if(key) sheetDataMap.set(key,r); });
+    insertBtn.disabled = true;
+    loadData(sheetData);
+  } catch(e) { console.error(e); }
+}
+
+function loadData(data){
+  sheetDataBody.innerHTML="";
+  data.forEach(row=>{
+    const actId = String(row.actId??"").trim();
+    const tr=document.createElement("tr");
+    tr.dataset.actid=actId;
+    tr.innerHTML=`
+      <td>${actId}</td>
+      <td>${escapeHtml(String(row.work??""))}</td>
+      <td>${escapeHtml(String(row.site??""))}</td>
+      <td>${escapeHtml(String(row.fund??""))}</td>
+      <td>${escapeHtml(String(row.tendered??""))}</td>
+    `;
+    tr.addEventListener("click",()=>toggleRowSelection(actId,tr));
+    tr.addEventListener("dblclick",()=>{insertRowsByActIds([actId]); selectedActIds.delete(actId); tr.classList.remove("selected"); updateInsertBtn();});
+    sheetDataBody.appendChild(tr);
+  });
+}
+
+function escapeHtml(text){ return text.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;"); }
+function escapeAttr(s){ return String(s??"").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/'/g,"&#039;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+function toggleRowSelection(actId,tr){ if(!actId) return; if(selectedActIds.has(actId)){ selectedActIds.delete(actId); tr.classList.remove("selected"); }else{ selectedActIds.add(actId); tr.classList.add("selected"); } updateInsertBtn(); }
+function updateInsertBtn(){ const has = selectedActIds.size>0; insertBtn.disabled = !has; insertBtn.classList.toggle("active",has); }
+
+insertBtn.addEventListener("click",()=>{
+  const ids=Array.from(selectedActIds);
+  if(ids.length===0) return;
+  insertRowsByActIds(ids);
+  document.querySelectorAll('.sheet-table tbody tr').forEach(tr=>{ const id=tr.dataset.actid; if(selectedActIds.has(id)) tr.classList.remove('selected'); });
+  selectedActIds.clear();
+  updateInsertBtn();
+});
+
+function insertRowsByActIds(actIds){
+  if(!Array.isArray(actIds)||actIds.length===0) return;
+  const duplicateNames=[];
+  let insertedAny=false;
+
+  actIds.forEach(actId=>{
+    const row=sheetDataMap.get(actId);
+    if(!row) return;
+    const workName=String(row.work??"").trim();
+    let isDuplicate=false;
+    for(const existingTr of schemesBody.querySelectorAll("tr")){
+      const existingAct = existingTr.querySelector("input[name='actid[]']")?.value ?? "";
+      const existingWork = existingTr.querySelector("input[name='work[]']")?.value ?? "";
+      if(existingAct===actId||existingWork===workName){ isDuplicate=true; break; }
+    }
+    if(isDuplicate){ duplicateNames.push(workName||actId); return; }
+
+    const newTr=document.createElement("tr");
+    newTr.classList.add("highlight");
+    newTr.innerHTML=`
+      <td><input class="table-input" name="actid[]" value="${escapeAttr(actId)}" readonly/></td>
+      <td><input class="table-input" name="work[]" value="${escapeAttr(workName)}" readonly/></td>
+      <td><input class="table-input" name="site[]" value="${escapeAttr(String(row.site??''))}" readonly/></td>
+      <td><input class="table-input" name="fund[]" value="${escapeAttr(String(row.fund??''))}" readonly/></td>
+      <td><input class="table-input tendered" name="tendered[]" value="${escapeAttr(String(row.tendered??''))}"/></td>
+      <td><input class="table-input formprice" name="formprice[]"/></td>
+      <td><input class="table-input earnest" name="earnest[]"/></td>
+      <td><button type="button" class="btn danger" onclick="this.closest('tr').remove(); updateSchemeCount();">Exclude</button></td>
+    `;
+    schemesBody.appendChild(newTr);
+    setTimeout(()=>newTr.classList.remove('highlight'),1000);
+    insertedAny=true;
+
+    // Add listener to tendered input for auto calc
+    const tenderedInput = newTr.querySelector(".tendered");
+    const formInput = newTr.querySelector(".formprice");
+    const earnestInput = newTr.querySelector(".earnest");
+
+    function recalc(){
+      const val=parseFloat(tenderedInput.value.replace(/,/g,""))||0;
+      // Earnest Money = roundup to 10 of 2%
+      earnestInput.value = Math.ceil((val*0.02)/10)*10;
+      // Tender Form Price rules
+      if(val<=200000) formInput.value=250;
+      else if(val<=500000) formInput.value=500;
+      else formInput.value=750;
+    }
+    tenderedInput.addEventListener("input", recalc);
+    // initial calculation
+    recalc();
+  });
+
+  if(insertedAny){ try{ successSound.currentTime=0; const p=successSound.play(); if(p&&p.then)p.catch(()=>{});}catch(err){}}
+  if(duplicateNames.length>0){ const uniq=Array.from(new Set(duplicateNames)); alert("⚠️ Already added, skipped:\n\n"+uniq.join("\n"));}
+  updateSchemeCount();
+}
+
+function updateSchemeCount(){ schemeCount.textContent=`Scheme Count: ${schemesBody.querySelectorAll("tr").length}`; }
+
+searchBox.addEventListener("input",()=>{
+  const query=searchBox.value.toLowerCase().trim();
+  if(!query){ loadData(sheetData); return; }
+  const filtered=sheetData.filter(row=>
+    String(row.actId??"").toLowerCase().includes(query)||
+    String(row.work??"").toLowerCase().includes(query)||
+    (`${row.actId??''} ${row.work??''}`).toLowerCase().includes(query)
+  );
+  loadData(filtered);
+});
+
+window.addEventListener("load", fetchAndLoad);
+
+// Save handler remains unchanged from your original code
+document.getElementById("nitForm").addEventListener("submit", async function(e) {
+  e.preventDefault();
+  const form=this;
+  const saveBtn=form.querySelector(".btn.primary");
+  const fd=new FormData(form);
+  const actids=fd.getAll("actid[]");
+  const works=fd.getAll("work[]");
+  const sites=fd.getAll("site[]");
+  const funds=fd.getAll("fund[]");
+  const tendered=fd.getAll("tendered[]");
+  const formprices=fd.getAll("formprice[]");
+  const earnests=fd.getAll("earnest[]");
+
+  if(actids.length===0){ alert("No schemes selected to save."); return; }
+  if(actids.length>250){ alert("You can save up to 250 schemes at a time."); return; }
+
+  saveBtn.disabled=true; saveBtn.textContent="Saving..."; saveBtn.classList.add("pulse");
+  saveStatus.textContent=`0/${actids.length}`;
+
+  try{
+    const existingRes=await fetch(API_URL+"?check=1");
+    const existing=await existingRes.json();
+    const existingIds=new Set(existing.map(r=>String(r.actId??"").trim()).filter(x=>x!==""));
+    const existingWorks=new Set(existing.map(r=>String(r.work??"").trim().toLowerCase()).filter(x=>x!==""));
+
+    const seenIds=new Set();
+    const seenWorks=new Set();
+    const foundDup=[];
+
+    for(let i=0;i<actids.length;i++){
+      const id=String(actids[i]||"").trim();
+      const work=String(works[i]||"").trim();
+      if((id&&existingIds.has(id))||(work&&existingWorks.has(work.toLowerCase()))) foundDup.push(work||id);
+      if(id&&seenIds.has(id)) foundDup.push((work||id)+" (duplicate in selection)");
+      if(work&&seenWorks.has(work.toLowerCase())) foundDup.push(work+" (duplicate in selection)");
+      if(id) seenIds.add(id);
+      if(work) seenWorks.add(work.toLowerCase());
     }
 
-    function loadData(data) {
-      sheetDataBody.innerHTML = "";
-      data.forEach(row => {
-        const actId = String(row.actId ?? "").trim();
-        const tr = document.createElement("tr");
-        tr.dataset.actid = actId;
-        tr.innerHTML = `
-          <td>${actId}</td>
-          <td>${escapeHtml(String(row.work ?? ""))}</td>
-          <td>${escapeHtml(String(row.site ?? ""))}</td>
-          <td>${escapeHtml(String(row.fund ?? ""))}</td>
-          <td>${escapeHtml(String(row.tendered ?? ""))}</td>
-        `;
-        tr.addEventListener("click", () => toggleRowSelection(actId, tr));
-        tr.addEventListener("dblclick", () => {
-          const rowObj = sheetDataMap.get(actId);
-          if (rowObj) {
-            insertRowsByActIds([actId]);
-            selectedActIds.delete(actId);
-            tr.classList.remove("selected");
-            updateInsertBtn();
-          }
-        });
-        sheetDataBody.appendChild(tr);
-      });
+    if(foundDup.length>0){
+      alert("⚠️ Duplicate entries found:\n\n"+Array.from(new Set(foundDup)).join("\n"));
+      saveBtn.disabled=false; saveBtn.textContent="Save & Update"; saveBtn.classList.remove("pulse"); saveStatus.textContent=""; return;
     }
 
-    function escapeHtml(text) {
-      return text.replace(/&/g, "&amp;")
-                 .replace(/</g, "&lt;")
-                 .replace(/>/g, "&gt;")
-                 .replace(/"/g, "&quot;")
-                 .replace(/'/g, "&#039;");
+    for(let i=0;i<actids.length;i++){
+      const params=new URLSearchParams();
+      params.append("fyear", fd.get("fyear")||"");
+      params.append("memo", fd.get("memo")||"");
+      params.append("memodate", fd.get("memodate")||"");
+      params.append("nit", fd.get("nit")||"");
+      params.append("date", fd.get("date")||"");
+      params.append("actid[]", actids[i]||"");
+      params.append("work[]", works[i]||"");
+      params.append("site[]", sites[i]||"");
+      params.append("fund[]", funds[i]||"");
+      params.append("tendered[]", tendered[i]||"");
+      params.append("formprice[]", formprices[i]||"");
+      params.append("earnest[]", earnests[i]||"");
+
+      const resp=await fetch(API_URL,{method:"POST",body:params.toString(),headers:{"Content-Type":"application/x-www-form-urlencoded"}});
+      const json=await resp.json();
+      if(!json||json.result!=="success"){ alert("Failed to save row "+(i+1)); saveBtn.disabled=false; saveBtn.textContent="Save & Update"; saveBtn.classList.remove("pulse"); saveStatus.textContent=""; return; }
+      saveStatus.textContent=`${i+1}/${actids.length}`;
     }
 
-    function toggleRowSelection(actId, trElement) {
-      if (!actId) return;
-      if (selectedActIds.has(actId)) {
-        selectedActIds.delete(actId);
-        trElement.classList.remove("selected");
-      } else {
-        selectedActIds.add(actId);
-        trElement.classList.add("selected");
-      }
-      updateInsertBtn();
-    }
+    saveBtn.textContent="Saved ✅";
+    setTimeout(()=>{ saveBtn.disabled=false; saveBtn.textContent="Save & Update"; saveBtn.classList.remove("pulse"); saveStatus.textContent=""; },1200);
+    alert(`✅ Successfully saved ${actids.length} scheme(s).`);
+    form.reset(); schemesBody.innerHTML=""; updateSchemeCount();
 
-    function updateInsertBtn() {
-      const has = selectedActIds.size > 0;
-      insertBtn.disabled = !has;
-      insertBtn.classList.toggle("active", has);
-    }
-
-    insertBtn.addEventListener("click", () => {
-      const ids = Array.from(selectedActIds);
-      if (ids.length === 0) return;
-      insertRowsByActIds(ids);
-      document.querySelectorAll('.sheet-table tbody tr').forEach(tr => {
-        const id = tr.dataset.actid;
-        if (selectedActIds.has(id)) tr.classList.remove('selected');
-      });
-      selectedActIds.clear();
-      updateInsertBtn();
-    });
-
-    function insertRowsByActIds(actIds) {
-      if (!Array.isArray(actIds) || actIds.length === 0) return;
-      const duplicateNames = [];
-      let insertedAny = false;
-
-      actIds.forEach(actId => {
-        const row = sheetDataMap.get(actId);
-        if (!row) return;
-        const workName = String(row.work ?? "").trim();
-        let isDuplicate = false;
-        for (const existingTr of schemesBody.querySelectorAll("tr")) {
-          const existingAct = existingTr.querySelector("input[name='actid[]']")?.value ?? "";
-          const existingWork = existingTr.querySelector("input[name='work[]']")?.value ?? "";
-          if (existingAct === actId || existingWork === workName) {
-            isDuplicate = true;
-            break;
-          }
-        }
-        if (isDuplicate) {
-          duplicateNames.push(workName || actId);
-          return;
-        }
-        const newTr = document.createElement("tr");
-        newTr.classList.add("highlight");
-        newTr.innerHTML = `
-          <td><input class="table-input" name="actid[]" value="${escapeAttr(actId)}" readonly/></td>
-          <td><input class="table-input" name="work[]" value="${escapeAttr(workName)}" readonly/></td>
-          <td><input class="table-input" name="site[]" value="${escapeAttr(String(row.site ?? ''))}" readonly/></td>
-          <td><input class="table-input" name="fund[]" value="${escapeAttr(String(row.fund ?? ''))}" readonly/></td>
-          <td><input class="table-input" name="tendered[]" value="${escapeAttr(String(row.tendered ?? ''))}" readonly/></td>
-          <td><input class="table-input" name="formprice[]"/></td>
-          <td><input class="table-input" name="earnest[]"/></td>
-          <td><button type="button" class="btn danger" onclick="this.closest('tr').remove(); updateSchemeCount();">Exclude</button></td>
-        `;
-        schemesBody.appendChild(newTr);
-        setTimeout(() => newTr.classList.remove('highlight'), 1000);
-        insertedAny = true;
-      });
-
-      if (insertedAny) {
-        try {
-          successSound.currentTime = 0;
-          const p = successSound.play();
-          if (p && p.then) p.catch(()=>{});
-        } catch (err) {}
-      }
-      if (duplicateNames.length > 0) {
-        const uniq = Array.from(new Set(duplicateNames));
-        alert("⚠️ Already added, skipped:\n\n" + uniq.join("\n"));
-      }
-      updateSchemeCount();
-    }
-
-    function escapeAttr(s) {
-      return String(s ?? "").replace(/&/g, "&amp;")
-                            .replace(/"/g, "&quot;")
-                            .replace(/'/g, "&#039;")
-                            .replace(/</g, "&lt;")
-                            .replace(/>/g, "&gt;");
-    }
-
-    function updateSchemeCount() {
-      schemeCount.textContent = `Scheme Count: ${schemesBody.querySelectorAll("tr").length}`;
-    }
-
-    searchBox.addEventListener("input", () => {
-      const query = searchBox.value.toLowerCase().trim();
-      if (!query) {
-        loadData(sheetData);
-        return;
-      }
-      const filtered = sheetData.filter(row =>
-        String(row.actId ?? "").toLowerCase().includes(query) ||
-        String(row.work ?? "").toLowerCase().includes(query) ||
-        (`${row.actId ?? ''} ${row.work ?? ''}`).toLowerCase().includes(query)
-      );
-      loadData(filtered);
-    });
-
-    window.addEventListener("load", fetchAndLoad);
-
-    // -------------------------
-    // Save handler (per-row, shows X/Y progress)
-    // -------------------------
-    document.getElementById("nitForm").addEventListener("submit", async function(e) {
-      e.preventDefault();
-      const form = this;
-      const saveBtn = form.querySelector(".btn.primary");
-
-      // collect formdata once
-      const fd = new FormData(form);
-      const actids   = fd.getAll("actid[]");
-      const works    = fd.getAll("work[]");
-      const sites    = fd.getAll("site[]");
-      const funds    = fd.getAll("fund[]");
-      const tendered = fd.getAll("tendered[]");
-      const formprices = fd.getAll("formprice[]");
-      const earnests = fd.getAll("earnest[]");
-
-      if (actids.length === 0) {
-        alert("No schemes selected to save.");
-        return;
-      }
-
-      // maximum guard
-      if (actids.length > 250) {
-        alert("You can save up to 250 schemes at a time. Please reduce selection.");
-        return;
-      }
-
-      // UI start
-      saveBtn.disabled = true;
-      saveBtn.textContent = "Saving...";
-      saveBtn.classList.add("pulse");
-      saveStatus.textContent = `0/${actids.length}`;
-
-      try {
-        // Duplicate check against NIT sheet
-        const existingRes = await fetch(API_URL + "?check=1");
-        const existing = await existingRes.json();
-        const existingIds = new Set(existing.map(r => String(r.actId ?? "").trim()).filter(x => x !== ""));
-        const existingWorks = new Set(existing.map(r => String(r.work ?? "").trim().toLowerCase()).filter(x => x !== ""));
-
-        // Also check duplicates within the selected batch
-        const seenIds = new Set();
-        const seenWorks = new Set();
-        const foundDup = [];
-
-        for (let i = 0; i < actids.length; i++) {
-          const id = String(actids[i] || "").trim();
-          const work = String(works[i] || "").trim();
-          if ((id && existingIds.has(id)) || (work && existingWorks.has(work.toLowerCase()))) {
-            foundDup.push(work || id);
-          }
-          if (id && seenIds.has(id)) {
-            foundDup.push((work || id) + " (duplicate in selection)");
-          }
-          if (work && seenWorks.has(work.toLowerCase())) {
-            foundDup.push(work + " (duplicate in selection)");
-          }
-          if (id) seenIds.add(id);
-          if (work) seenWorks.add(work.toLowerCase());
-        }
-
-        if (foundDup.length > 0) {
-          alert("⚠️ Duplicate entries found (sheet or within selection):\n\n" + Array.from(new Set(foundDup)).join("\n"));
-          saveBtn.disabled = false;
-          saveBtn.textContent = "Save & Update";
-          saveBtn.classList.remove("pulse");
-          saveStatus.textContent = "";
-          return;
-        }
-
-        // Send each row sequentially and update progress
-        for (let i = 0; i < actids.length; i++) {
-          const params = new URLSearchParams();
-
-          // meta fields (single)
-          params.append("fyear", fd.get("fyear") || "");
-          params.append("memo", fd.get("memo") || "");
-          params.append("memodate", fd.get("memodate") || "");
-          params.append("nit", fd.get("nit") || "");
-          params.append("date", fd.get("date") || "");
-
-          // scheme-specific fields — send as actid[] etc (one value each request)
-          params.append("actid[]", actids[i] || "");
-          params.append("work[]", works[i] || "");
-          params.append("site[]", sites[i] || "");
-          params.append("fund[]", funds[i] || "");
-          params.append("tendered[]", tendered[i] || "");
-          params.append("formprice[]", formprices[i] || "");
-          params.append("earnest[]", earnests[i] || "");
-
-          const resp = await fetch(API_URL, {
-            method: "POST",
-            body: params.toString(),
-            headers: { "Content-Type": "application/x-www-form-urlencoded" }
-          });
-
-          const json = await resp.json();
-          if (!json || json.result !== "success") {
-            const msg = (json && json.message) ? json.message : "Unknown server error";
-            alert("Failed to save row " + (i + 1) + ": " + msg);
-            saveBtn.disabled = false;
-            saveBtn.textContent = "Save & Update";
-            saveBtn.classList.remove("pulse");
-            saveStatus.textContent = "";
-            return;
-          }
-
-          // update status
-          saveStatus.textContent = `${i + 1}/${actids.length}`;
-        }
-
-        // finished all rows
-        saveBtn.textContent = "Saved ✅";
-        setTimeout(() => {
-          saveBtn.disabled = false;
-          saveBtn.textContent = "Save & Update";
-          saveBtn.classList.remove("pulse");
-          saveStatus.textContent = "";
-        }, 1200);
-
-        alert(`✅ Successfully saved ${actids.length} scheme(s).`);
-        form.reset();
-        schemesBody.innerHTML = "";
-        updateSchemeCount();
-
-      } catch (err) {
-        alert("❌ Failed to save: " + err.message);
-        saveBtn.disabled = false;
-        saveBtn.textContent = "Save & Update";
-        saveBtn.classList.remove("pulse");
-        saveStatus.textContent = "";
-      }
-    });
-  </script>
+  } catch(err){
+    alert("❌ Failed to save: "+err.message);
+    saveBtn.disabled=false; saveBtn.textContent="Save & Update"; saveBtn.classList.remove("pulse"); saveStatus.textContent="";
+  }
+});
+</script>
 </body>
 </html>
