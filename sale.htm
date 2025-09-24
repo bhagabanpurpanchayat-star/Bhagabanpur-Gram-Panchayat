@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <title>Sale of Tender Form</title>
 
-  <!-- Choices.js -->
+  <!-- Choices.js (still available for other multi-selects if needed) -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
   <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
 
@@ -30,8 +30,8 @@
     /* Narrow Vendor column */
     #dataTable th:nth-child(14),
     #dataTable td:nth-child(14) {
-      width: 180px;
-      max-width: 180px;
+      width: 220px;
+      max-width: 220px;
     }
 
     .choices { min-width: 200px; font-size: 12px; text-align: left; }
@@ -60,6 +60,32 @@
 
     /* Stamp top-right */
     .stamp { position: absolute; top: 20px; right: 20px; background: #444; padding: 10px 14px; border-radius: 8px; color: #fff; font-size: 13px; font-weight: bold; }
+
+    /* Vendor Modal (two-list) */
+    #vendorModal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:10000; align-items:center; justify-content:center; }
+    #vendorModal .modal-box { background:#fff; color:#000; padding:18px; border-radius:10px; width:640px; max-width:95%; }
+    #vendorModal h3 { margin-top:0; color:#003366; text-align:center; }
+    .vendor-container { display:flex; gap:18px; align-items:center; justify-content:center; margin-top:10px; }
+    .vendor-column { flex:1; text-align:center; }
+    .vendor-column h4 { margin:6px 0; color:#003366; }
+    select.two-list { width:100%; height:260px; padding:6px; font-size:13px; border:1px solid #888; border-radius:6px; }
+    .move-buttons { display:flex; flex-direction:column; gap:10px; }
+    .move-buttons button { padding:8px 12px; border:none; border-radius:6px; cursor:pointer; font-size:14px; }
+    .btn-add { background:#007bff; color:#fff; }
+    .btn-remove { background:#dc3545; color:#fff; }
+    .modal-footer { margin-top:14px; text-align:right; display:flex; justify-content:flex-end; gap:10px; }
+    .modal-footer button { padding:6px 12px; border:none; border-radius:6px; font-weight:bold; cursor:pointer; }
+    .btn-cancel { background:#999; color:#fff; }
+    .btn-save-modal { background:#28a745; color:#fff; position:relative; min-width:90px; }
+
+    /* Confirmation modal */
+    #confirmModal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:11000; align-items:center; justify-content:center; }
+    #confirmModal .confirm-box { background:#fff; color:#000; padding:20px; border-radius:10px; width:340px; text-align:center; }
+    #confirmModal h4 { margin-top:0; color:#003366; }
+    #confirmModal .buttons { margin-top:18px; display:flex; justify-content:space-around; }
+    #confirmModal .buttons button { padding:6px 14px; border:none; border-radius:6px; font-weight:bold; cursor:pointer; }
+    #confirmYes { background:#28a745; color:#fff; }
+    #confirmNo { background:#dc3545; color:#fff; }
   </style>
 </head>
 <body>
@@ -100,13 +126,64 @@
     <tbody></tbody>
   </table>
 
+  <!-- Vendor Selection Modal (two-list UI) -->
+  <div id="vendorModal">
+    <div class="modal-box">
+      <h3>Select Vendors</h3>
+      <div class="vendor-container">
+        <div class="vendor-column">
+          <h4>All Vendors</h4>
+          <select id="allVendors" class="two-list" multiple></select>
+        </div>
+
+        <div class="move-buttons">
+          <button id="btnMoveRight" class="btn-add" title="Add selected →">➡</button>
+          <button id="btnMoveLeft" class="btn-remove" title="Remove selected ←">⬅</button>
+        </div>
+
+        <div class="vendor-column">
+          <h4>Selected Vendor</h4>
+          <select id="selectedVendors" class="two-list" multiple></select>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button onclick="closeVendorModal()" class="btn-cancel">Cancel</button>
+        <button id="saveVendorModalBtn" class="btn-save-modal">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirmation modal -->
+  <div id="confirmModal">
+    <div class="confirm-box">
+      <h4>Confirm Save</h4>
+      <p>Are you sure you want to save vendors for this NIT?</p>
+      <div class="buttons">
+        <button id="confirmYes">Yes</button>
+        <button id="confirmNo">No</button>
+      </div>
+    </div>
+  </div>
+
   <script>
-    const scriptURL = "https://script.google.com/macros/s/AKfycbyUp4_hf-iY_9eQdKBl-egGp48CbZatyhWx1gRrHhhbOO_cglNUBDBOQhczNPtDir6Z9w/exec"; 
-    let tableData = [];
-    let vendorOptions = [];
+    // KEEP current scriptURL as requested
+    const scriptURL = "https://script.google.com/macros/s/AKfycbyUp4_hf-iY_9eQdKBl-egGp48CbZatyhWx1gRrHhhbOO_cglNUBDBOQhczNPtDir6Z9w/exec";
 
-    function valueToString(v) { if(v===null||v===undefined) return ""; if(typeof v==="string") return v; if(typeof v==="number") return String(v); try{ return String(v); }catch{return "";}}
+    let tableData = [];      // full table rows from server
+    let vendorOptions = [];  // list of all vendors from server
 
+    // modal state
+    let modalRowIndex = null;
+    let modalTdVendor = null;
+    let modalActionBtn = null;
+
+    // chosen vendors (from modal) - used during confirmation
+    let modalChosenVendors = [];
+
+    function valueToString(v) { if(v===null||v===undefined) return ""; if(typeof v==="string") return v; if(typeof v==="number") return String(v); try{ return String(v); }catch{return "";} }
+
+    // --- Data loading / refresh ---
     async function refreshData() {
       const btn = document.getElementById("refreshBtn");
       const oldHTML = btn.innerHTML;
@@ -119,141 +196,298 @@
     }
 
     async function loadData() {
-      const [vRes,tRes] = await Promise.all([fetch(scriptURL+"?action=getVendors"),fetch(scriptURL+"?action=getTenderData")]);
+      // fetch vendors and tender data in parallel
+      const [vRes, tRes] = await Promise.all([fetch(scriptURL + "?action=getVendors"), fetch(scriptURL + "?action=getTenderData")]);
       vendorOptions = await vRes.json();
       tableData = await tRes.json();
       renderTable(tableData);
       updateStamp(tableData);
     }
 
+    // --- Helpers ---
     function formatTimestamp(raw){ if(!raw) return ""; let d=new Date(raw); if(!isNaN(d)) return d.toLocaleString("en-US",{hour12:false}); return raw; }
     function formatDate(raw){ if(!raw) return ""; let d=new Date(raw); if(!isNaN(d)) return d.toLocaleDateString("en-GB"); return raw; }
 
     function showPopup(msg, blink=false){ const el=document.getElementById("progressMessage"); el.innerText=msg; if(blink) el.classList.add("blink"); else el.classList.remove("blink"); document.getElementById("progressPopup").style.display="flex"; }
     function hidePopup(){ document.getElementById("progressPopup").style.display="none"; }
 
+    function showMessage(text,type){ const msg=document.getElementById("message"); msg.textContent=text; msg.className=type; msg.style.display="block"; setTimeout(()=>{msg.style.display="none";},2200); }
+
+    // --- Table rendering ---
     function renderTable(data){
       const tbody = document.querySelector("#dataTable tbody");
       tbody.innerHTML = "";
 
-      data.forEach((row, idx)=>{
+      data.forEach((row, idx) => {
         const tr = document.createElement("tr");
-        const timeStamp=formatTimestamp(row[0]), finYear=valueToString(row[1]), nitNo=valueToString(row[4]), nitDate=formatDate(row[5]), slNo=valueToString(row[6]), uniqueNIT=valueToString(row[7]), activityId=valueToString(row[8]), workName=valueToString(row[9]), siteDetails=valueToString(row[10]), fund=valueToString(row[11]), tenderAmt=valueToString(row[12]), formPrice=valueToString(row[13]), earnest=valueToString(row[14]), vendorsArr=valueToString(row[15]).split(",").map(s=>s.trim()).filter(s=>s);
 
-        [timeStamp,finYear,uniqueNIT,nitNo,nitDate,slNo,activityId,workName,siteDetails,fund,tenderAmt,formPrice,earnest].forEach(val=>{const td=document.createElement("td"); td.textContent=val; tr.appendChild(td);});
+        const timeStamp = formatTimestamp(row[0]);
+        const finYear = valueToString(row[1]);
+        const nitNo = valueToString(row[4]);
+        const nitDate = formatDate(row[5]);
+        const slNo = valueToString(row[6]);
+        const uniqueNIT = valueToString(row[7]);
+        const activityId = valueToString(row[8]);
+        const workName = valueToString(row[9]);
+        const siteDetails = valueToString(row[10]);
+        const fund = valueToString(row[11]);
+        const tenderAmt = valueToString(row[12]);
+        const formPrice = valueToString(row[13]);
+        const earnest = valueToString(row[14]);
+        const vendorsArr = valueToString(row[15]).split(",").map(s => s.trim()).filter(s => s);
 
-        const tdVendor=document.createElement("td");
-        if(vendorsArr.length>0){
-          const container=document.createElement("div"); container.className="vendor-list";
+        // basic cells
+        [timeStamp, finYear, uniqueNIT, nitNo, nitDate, slNo, activityId, workName, siteDetails, fund, tenderAmt, formPrice, earnest].forEach(val => {
+          const td = document.createElement("td");
+          td.textContent = val;
+          tr.appendChild(td);
+        });
 
-          // ✅ Row-wise vendor count
-          const count=document.createElement("span");
-          count.className="vendor-count";
-          count.textContent=`Vendors: ${vendorsArr.length}`;
+        // vendor column
+        const tdVendor = document.createElement("td");
+        tdVendor.style.cursor = "pointer";
+        if (vendorsArr.length > 0) {
+          const container = document.createElement("div");
+          container.className = "vendor-list";
+
+          const count = document.createElement("span");
+          count.className = "vendor-count";
+          count.textContent = `Vendors: ${vendorsArr.length}`;
           container.appendChild(count);
 
-          vendorsArr.forEach(v=>{
-            const span=document.createElement("span");
-            span.className="vendor-tag";
-            span.textContent=v;
+          vendorsArr.forEach(v => {
+            const span = document.createElement("span");
+            span.className = "vendor-tag";
+            span.textContent = v;
             container.appendChild(span);
           });
+
           tdVendor.appendChild(container);
         } else {
-          tdVendor.appendChild(createVendorSelect([],idx));
+          // show hint and clickable area to open modal
+          const hint = document.createElement("div");
+          hint.style.color = "#ffd700";
+          hint.style.fontWeight = "700";
+          hint.textContent = "Click to add vendors";
+          tdVendor.appendChild(hint);
         }
         tr.appendChild(tdVendor);
 
-        const tdAction=document.createElement("td");
-        const btn=document.createElement("button"); btn.classList.add("action-btn");
-        if(vendorsArr.length===0){ btn.textContent="Save"; btn.classList.add("btn-save"); btn.onclick=()=>handleSave(idx,tdVendor,btn);}
-        else{ btn.textContent="Update"; btn.classList.add("btn-update"); btn.onclick=()=>switchToEditable(vendorsArr,idx,tdVendor,btn);}
-        tdAction.appendChild(btn); tr.appendChild(tdAction);
+        // action column
+        const tdAction = document.createElement("td");
+        const btnAction = document.createElement("button");
+        btnAction.classList.add("action-btn");
+        if (vendorsArr.length === 0) {
+          btnAction.textContent = "Save";
+          btnAction.classList.add("btn-save");
+        } else {
+          btnAction.textContent = "Update";
+          btnAction.classList.add("btn-update");
+        }
+
+        // clicking either vendor cell or action button opens modal
+        tdVendor.onclick = () => openVendorModal(idx, tdVendor, btnAction, vendorsArr);
+        btnAction.onclick = () => openVendorModal(idx, tdVendor, btnAction, vendorsArr);
+
+        tdAction.appendChild(btnAction);
+        tr.appendChild(tdAction);
+
         tbody.appendChild(tr);
       });
     }
 
-    function createVendorSelect(selectedVendors,rowIndex){
-      const select=document.createElement("select"); select.multiple=true;
-      vendorOptions.forEach(opt=>{const option=document.createElement("option"); option.value=opt; option.textContent=opt; if(selectedVendors.includes(opt)) option.selected=true; select.appendChild(option); });
-      new Choices(select,{removeItemButton:true, searchEnabled:true});
-      return select;
+    // --- Vendor Modal (two-list) logic ---
+    function openVendorModal(rowIndex, tdVendor, actionBtn, currentVendors) {
+      modalRowIndex = rowIndex;
+      modalTdVendor = tdVendor;
+      modalActionBtn = actionBtn;
+
+      // clear selects
+      const allBox = document.getElementById("allVendors");
+      const selBox = document.getElementById("selectedVendors");
+      allBox.innerHTML = "";
+      selBox.innerHTML = "";
+
+      // prepare selected set
+      const selSet = new Set((currentVendors || []).map(s => s.trim()));
+
+      // populate boxes
+      vendorOptions.forEach(v => {
+        const option = document.createElement("option");
+        option.value = v;
+        option.textContent = v;
+        if (selSet.has(v)) selBox.appendChild(option);
+        else allBox.appendChild(option);
+      });
+
+      // reset modal button label
+      const saveBtn = document.getElementById("saveVendorModalBtn");
+      saveBtn.innerHTML = "Save";
+      saveBtn.disabled = false;
+
+      // show modal
+      document.getElementById("vendorModal").style.display = "flex";
     }
 
-    async function handleSave(idx,tdVendor,btn){
-      const select=tdVendor.querySelector("select"); if(!select) return;
-      const chosen=Array.from(select.selectedOptions).map(o => o.value);
-      if(chosen.length<3){ alert("⚠ Please select at least 3 vendors."); return; }
-      await saveVendors(idx,chosen,btn,tdVendor);
+    function closeVendorModal() {
+      document.getElementById("vendorModal").style.display = "none";
+      modalRowIndex = null; modalTdVendor = null; modalActionBtn = null; modalChosenVendors = [];
     }
 
-    function switchToEditable(currentVendors,idx,tdVendor,btn){
-      tdVendor.innerHTML=""; const select=createVendorSelect(currentVendors,idx); tdVendor.appendChild(select);
-      btn.textContent="Update"; btn.classList.add("btn-update"); btn.onclick=()=>handleSave(idx,tdVendor,btn);
+    // move selected from left -> right
+    document.getElementById("btnMoveRight").onclick = () => {
+      const allBox = document.getElementById("allVendors");
+      const selBox = document.getElementById("selectedVendors");
+
+      Array.from(allBox.selectedOptions).forEach(opt => {
+        selBox.appendChild(opt);
+      });
+    };
+
+    // move selected from right -> left
+    document.getElementById("btnMoveLeft").onclick = () => {
+      const allBox = document.getElementById("allVendors");
+      const selBox = document.getElementById("selectedVendors");
+
+      Array.from(selBox.selectedOptions).forEach(opt => {
+        allBox.appendChild(opt);
+      });
+    };
+
+    // Save from modal (show confirm modal first)
+    document.getElementById("saveVendorModalBtn").onclick = () => {
+      const selBox = document.getElementById("selectedVendors");
+      modalChosenVendors = Array.from(selBox.options).map(o => o.value).map(s => s.trim()).filter(s => s);
+
+      if (modalChosenVendors.length < 3) {
+        alert("⚠ Please select at least 3 vendors.");
+        return;
+      }
+
+      // show confirmation modal
+      document.getElementById("confirmModal").style.display = "flex";
+    };
+
+    // Confirm modal actions
+    document.getElementById("confirmYes").onclick = async () => {
+      // animate Save button inside the vendor modal
+      const saveBtn = document.getElementById("saveVendorModalBtn");
+      saveBtn.disabled = true;
+      saveBtn.innerHTML = `<span class="spinner"></span> Saving...`;
+
+      // perform actual save to server
+      const success = await saveVendors(modalRowIndex, modalChosenVendors, modalActionBtn, modalTdVendor);
+
+      if (success) {
+        saveBtn.innerHTML = `Saved ✅`;
+        // keep 'Saved' state briefly so user sees it inside modal
+        setTimeout(() => {
+          // update modal's action button state in table
+          const btn = modalActionBtn;
+          if (btn) {
+            btn.textContent = "Update";
+            btn.classList.remove("btn-save");
+            btn.classList.add("btn-update");
+            btn.onclick = () => openVendorModal(modalRowIndex, modalTdVendor, btn, modalChosenVendors);
+          }
+
+          // close confirm modal and vendor modal
+          document.getElementById("confirmModal").style.display = "none";
+          closeVendorModal();
+        }, 900);
+      } else {
+        saveBtn.innerHTML = `Save`;
+        saveBtn.disabled = false;
+        document.getElementById("confirmModal").style.display = "none";
+      }
+    };
+
+    document.getElementById("confirmNo").onclick = () => {
+      document.getElementById("confirmModal").style.display = "none";
+    };
+
+    // --- Save vendors to server (POST to Google Apps Script) ---
+    async function saveVendors(rowIndex, vendors, btn, tdVendor) {
+      try {
+        showPopup("Saving...", true);
+        const formData = new FormData();
+        formData.append("action", "updateVendors");
+        formData.append("rowIndex", rowIndex);
+        formData.append("vendors", vendors.join(", "));
+
+        const res = await fetch(scriptURL, { method: "POST", body: formData });
+        const result = await res.json();
+
+        if (result && result.success) {
+          // Update internal tableData so UI stays consistent
+          if (tableData[rowIndex]) tableData[rowIndex][15] = vendors.join(", ");
+
+          // update the tdVendor to show saved tags (if tdVendor provided)
+          if (tdVendor) {
+            tdVendor.innerHTML = "";
+            const container = document.createElement("div");
+            container.className = "vendor-list";
+
+            const count = document.createElement("span");
+            count.className = "vendor-count";
+            count.textContent = `Vendors: ${vendors.length}`;
+            container.appendChild(count);
+
+            vendors.forEach(v => {
+              const span = document.createElement("span");
+              span.className = "vendor-tag";
+              span.textContent = v;
+              container.appendChild(span);
+            });
+            tdVendor.appendChild(container);
+          }
+
+          updateStamp(tableData);
+          showPopup("Done ✅");
+          setTimeout(() => hidePopup(), 1200);
+          showMessage("Vendors saved & extracted ✅", "success");
+          return true;
+        } else {
+          showMessage("Save failed", "error");
+          return false;
+        }
+      } catch (err) {
+        showMessage("Error: " + err.message, "error");
+        return false;
+      }
     }
 
-    async function saveVendors(rowIndex,vendors,btn,tdVendor){
-      btn.disabled=true;
-      showPopup("Saving...",true);
-      const formData=new FormData();
-      formData.append("action","updateVendors"); formData.append("rowIndex",rowIndex); formData.append("vendors",vendors.join(", "));
-      try{
-        const res=await fetch(scriptURL,{method:"POST",body:formData});
-        const result=await res.json();
-        if(result.success){
-          tdVendor.innerHTML="";
-          const container=document.createElement("div"); container.className="vendor-list";
-
-          const count=document.createElement("span");
-          count.className="vendor-count";
-          count.textContent=`Vendors: ${vendors.length}`;
-          container.appendChild(count);
-
-          vendors.forEach(v=>{
-            const span=document.createElement("span");
-            span.className="vendor-tag";
-            span.textContent=v;
-            container.appendChild(span);
-          });
-          tdVendor.appendChild(container);
-
-          btn.textContent="Update"; btn.classList.add("btn-update");
-          btn.onclick=()=>switchToEditable(vendors,rowIndex,tdVendor,btn);
-
-          showPopup("Done ✅"); setTimeout(()=>hidePopup(),1500);
-          showMessage("Vendors saved & extracted ✅","success");
-          updateStamp(tableData); // refresh stamp
-        } else { showMessage("Save failed","error"); }
-      } catch(err){ showMessage("Error: "+err.message,"error"); }
-      btn.disabled=false;
-    }
-
-    function updateStamp(data){
-      const nitNos = data.map(r=>valueToString(r[4])).filter(v=>v);
+    // --- Search & utilities ---
+    function updateStamp(data) {
+      const nitNos = data.map(r => valueToString(r[4])).filter(v => v);
       const totalSchemes = nitNos.length;
       const uniqueNITs = new Set(nitNos).size;
       document.getElementById("stampBox").textContent = `Total NITs: ${uniqueNITs} | Total Schemes: ${totalSchemes}`;
     }
 
-    function filterTable(){
-      const q=(document.getElementById("searchInput").value||"").trim().toLowerCase();
-      if(!q){ renderTable(tableData); return; }
-      const filtered=tableData.filter(row=>{
-        const nitNo=valueToString(row[4]).toLowerCase(), date=formatDate(row[5]).toLowerCase(),
-        slNo=valueToString(row[6]).toLowerCase(), activityId=valueToString(row[8]).toLowerCase(),
-        workName=valueToString(row[9]).toLowerCase(), siteDetails=valueToString(row[10]).toLowerCase(),
-        fund=valueToString(row[11]).toLowerCase(), uniqueNIT=valueToString(row[7]).toLowerCase();
+    function filterTable() {
+      const q = (document.getElementById("searchInput").value || "").trim().toLowerCase();
+      if (!q) { renderTable(tableData); updateStamp(tableData); return; }
+      const filtered = tableData.filter(row => {
+        const nitNo = valueToString(row[4]).toLowerCase(),
+          date = formatDate(row[5]).toLowerCase(),
+          slNo = valueToString(row[6]).toLowerCase(),
+          activityId = valueToString(row[8]).toLowerCase(),
+          workName = valueToString(row[9]).toLowerCase(),
+          siteDetails = valueToString(row[10]).toLowerCase(),
+          fund = valueToString(row[11]).toLowerCase(),
+          uniqueNIT = valueToString(row[7]).toLowerCase();
         return (uniqueNIT.includes(q) || nitNo.includes(q) || date.includes(q) ||
-                activityId.includes(q) || workName.includes(q) ||
-                siteDetails.includes(q) || fund.includes(q));
+          activityId.includes(q) || workName.includes(q) ||
+          siteDetails.includes(q) || fund.includes(q));
       });
       renderTable(filtered);
       updateStamp(filtered);
     }
 
-    function clearSearch(){ document.getElementById("searchInput").value=""; renderTable(tableData); updateStamp(tableData); }
-    function showMessage(text,type){ const msg=document.getElementById("message"); msg.textContent=text; msg.className=type; msg.style.display="block"; setTimeout(()=>{msg.style.display="none";},2200); }
+    function clearSearch() { document.getElementById("searchInput").value = ""; renderTable(tableData); updateStamp(tableData); }
 
+    // initial load
     loadData();
   </script>
 </body>
