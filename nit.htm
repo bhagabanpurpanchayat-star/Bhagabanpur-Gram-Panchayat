@@ -18,51 +18,276 @@
     body {
       background: linear-gradient(135deg, #0b0b0b, #151515, #1c1c1c);
       color: var(--muted);
+      min-height: 100vh;
     }
-    header { height:56px; background: linear-gradient(90deg,var(--sidebar),#13232f); display:flex; align-items:center; padding:0 18px; color:#fff; box-shadow:0 2px 6px rgba(0,0,0,0.6); font-size:18px; font-weight:bold; }
-    main { padding:18px; }
+    header { 
+      height:56px; 
+      background: linear-gradient(90deg,var(--sidebar),#13232f); 
+      display:flex; 
+      align-items:center; 
+      padding:0 18px; 
+      color:#fff; 
+      box-shadow:0 2px 6px rgba(0,0,0,0.6); 
+      font-size:18px; 
+      font-weight:bold; 
+    }
+    main { 
+      padding:18px; 
+      max-width: 1400px;
+      margin: 0 auto;
+    }
 
-    .card { background: var(--card-bg); padding:16px; border-radius:14px; box-shadow: 0 8px 25px rgba(0,0,0,0.6), 0 0 12px var(--neon-blue), 0 0 24px rgba(0,217,255,0.3); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border:1px solid var(--neon-blue); transition: all 0.3s ease-in-out; }
+    .card { 
+      background: var(--card-bg); 
+      padding:16px; 
+      border-radius:14px; 
+      box-shadow: 0 8px 25px rgba(0,0,0,0.6), 0 0 12px var(--neon-blue), 0 0 24px rgba(0,217,255,0.3); 
+      backdrop-filter: blur(15px); 
+      -webkit-backdrop-filter: blur(15px); 
+      border:1px solid var(--neon-blue); 
+      transition: all 0.3s ease-in-out; 
+    }
 
-    .page-title { font-size:28px; font-weight:700; margin-bottom:12px; color:#fff; text-align:center; animation: pulseTitle 2s infinite ease-in-out; }
-    @keyframes pulseTitle { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+    .page-title { 
+      font-size:28px; 
+      font-weight:700; 
+      margin-bottom:12px; 
+      color:#fff; 
+      text-align:center; 
+      animation: pulseTitle 2s infinite ease-in-out; 
+    }
+    @keyframes pulseTitle { 
+      0%, 100% { transform: scale(1); } 
+      50% { transform: scale(1.1); } 
+    }
 
-    .form-grid { display:grid; grid-template-columns:repeat(12,1fr); gap:10px; margin-bottom:12px; }
-    .field { grid-column:span 2; }
-    label { display:block; font-size:12px; margin-bottom:4px; color:var(--muted); text-align:center; }
-    input[type=text], input[type=date] { width:100%; padding:4px 6px; border-radius:4px; border:1px solid var(--neon-blue); background:rgba(255,255,255,0.05); color:#fff; font-size:13px; height:26px; text-align:center; backdrop-filter: blur(8px); transition: all 0.3s ease-in-out; box-shadow: 0 0 5px rgba(0,217,255,0.3); }
-    input[type=text]:focus, input[type=date]:focus { box-shadow: 0 0 10px var(--neon-blue); border-color: var(--neon-blue); }
+    .form-grid { 
+      display:grid; 
+      grid-template-columns:repeat(auto-fit, minmax(90px, 1fr)); 
+      gap:8px; 
+      margin-bottom:12px; 
+    }
+    .field { 
+      display: flex;
+      flex-direction: column;
+    }
+    label { 
+      display:block; 
+      font-size:12px; 
+      margin-bottom:4px; 
+      color:var(--muted); 
+      text-align:center; 
+    }
+    input[type=text], input[type=date], input[type=datetime-local] { 
+      width:100%; 
+      padding:4px 6px; 
+      border-radius:4px; 
+      border:1px solid var(--neon-blue); 
+      background:rgba(255,255,255,0.05); 
+      color:#fff; 
+      font-size:13px; 
+      height:26px; 
+      text-align:center; 
+      backdrop-filter: blur(8px); 
+      transition: all 0.3s ease-in-out; 
+      box-shadow: 0 0 5px rgba(0,217,255,0.3); 
+    }
+    input[type=text]:focus, input[type=date]:focus, input[type=datetime-local]:focus { 
+      box-shadow: 0 0 10px var(--neon-blue); 
+      border-color: var(--neon-blue); 
+      outline: none;
+    }
 
-    #schemeCount { float: right; background-color: rgba(0,217,255,0.15); color:white; padding:5px 12px; border-radius:16px; font-weight:bold; font-size:13px; margin-bottom:6px; border:1px solid var(--neon-blue); box-shadow:0 0 8px var(--neon-blue); }
+    #schemeCount { 
+      float: right; 
+      background-color: rgba(0,217,255,0.15); 
+      color:white; 
+      padding:5px 12px; 
+      border-radius:16px; 
+      font-weight:bold; 
+      font-size:13px; 
+      margin-bottom:6px; 
+      border:1px solid var(--neon-blue); 
+      box-shadow:0 0 8px var(--neon-blue); 
+    }
 
-    .schemes, .sheet-table-container { margin-top:8px; border-radius:8px; overflow:auto; border:1px solid var(--neon-blue); max-height:280px; background: rgba(255,255,255,0.05); backdrop-filter: blur(12px); box-shadow: 0 0 8px var(--neon-blue), 0 6px 20px rgba(0,0,0,0.5); }
-    table { width:100%; border-collapse:collapse; font-size:12px; color:#fff; table-layout:fixed; }
-    thead th { background: rgba(43,74,99,0.55); padding:6px 4px; text-align:center; word-wrap:break-word; white-space:normal; position:sticky; top:0; z-index:2; backdrop-filter: blur(8px); border-bottom:1px solid var(--neon-blue); box-shadow:0 0 8px rgba(0,217,255,0.3); }
-    tbody tr { transition: all 0.2s ease; }
-    tbody tr:hover { background: rgba(0,217,255,0.08); cursor:pointer; box-shadow: inset 0 0 6px var(--neon-blue); }
-    tbody tr.selected { background: rgba(0,217,255,0.15); box-shadow: inset 0 0 8px var(--neon-blue); }
-    tbody td { padding:4px 3px; border-top:1px solid rgba(255,255,255,0.05); vertical-align:middle; text-align:center; word-wrap:break-word; white-space:normal; }
-    .table-input { width:100%; padding:2px 3px; border-radius:3px; border:1px solid var(--neon-blue); background:rgba(255,255,255,0.06); color:#fff; font-size:12px; height:22px; text-align:center; backdrop-filter: blur(6px); box-shadow: 0 0 5px rgba(0,217,255,0.3); }
+    .schemes, .sheet-table-container { 
+      margin-top:8px; 
+      border-radius:8px; 
+      overflow:auto; 
+      border:1px solid var(--neon-blue); 
+      max-height:280px; 
+      background: rgba(255,255,255,0.05); 
+      backdrop-filter: blur(12px); 
+      box-shadow: 0 0 8px var(--neon-blue), 0 6px 20px rgba(0,0,0,0.5); 
+    }
+    table { 
+      width:100%; 
+      border-collapse:collapse; 
+      font-size:12px; 
+      color:#fff; 
+      table-layout:fixed; 
+    }
+    thead th { 
+      background: rgba(43,74,99,0.55); 
+      padding:6px 4px; 
+      text-align:center; 
+      word-wrap:break-word; 
+      white-space:normal; 
+      position:sticky; 
+      top:0; 
+      z-index:2; 
+      backdrop-filter: blur(8px); 
+      border-bottom:1px solid var(--neon-blue); 
+      box-shadow:0 0 8px rgba(0,217,255,0.3); 
+    }
+    tbody tr { 
+      transition: all 0.2s ease; 
+    }
+    tbody tr:hover { 
+      background: rgba(0,217,255,0.08); 
+      cursor:pointer; 
+      box-shadow: inset 0 0 6px var(--neon-blue); 
+    }
+    tbody tr.selected { 
+      background: rgba(0,217,255,0.15); 
+      box-shadow: inset 0 0 8px var(--neon-blue); 
+    }
+    tbody td { 
+      padding:4px 3px; 
+      border-top:1px solid rgba(255,255,255,0.05); 
+      vertical-align:middle; 
+      text-align:center; 
+      word-wrap:break-word; 
+      white-space:normal; 
+    }
+    .table-input { 
+      width:100%; 
+      padding:2px 3px; 
+      border-radius:3px; 
+      border:1px solid var(--neon-blue); 
+      background:rgba(255,255,255,0.06); 
+      color:#fff; 
+      font-size:12px; 
+      height:22px; 
+      text-align:center; 
+      backdrop-filter: blur(6px); 
+      box-shadow: 0 0 5px rgba(0,217,255,0.3); 
+    }
 
-    .btn { padding:6px 12px; border-radius:4px; border:1px solid var(--neon-blue); cursor:pointer; font-weight:600; font-size:13px; transition:0.3s ease-in-out; box-shadow:0 0 8px rgba(0,217,255,0.4); }
-    .btn.primary { background:#0ca678; color:#fff; }
-    .btn.primary:hover { background:#09996b; box-shadow:0 0 12px var(--neon-blue); }
-    .btn.danger { background:#e53935; color:white; }
-    .btn.danger:hover { background:#c62828; box-shadow:0 0 12px var(--neon-blue); }
+    .btn { 
+      padding:6px 12px; 
+      border-radius:4px; 
+      border:1px solid var(--neon-blue); 
+      cursor:pointer; 
+      font-weight:600; 
+      font-size:13px; 
+      transition:0.3s ease-in-out; 
+      box-shadow:0 0 8px rgba(0,217,255,0.4); 
+    }
+    .btn.primary { 
+      background:#0ca678; 
+      color:#fff; 
+    }
+    .btn.primary:hover { 
+      background:#09996b; 
+      box-shadow:0 0 12px var(--neon-blue); 
+    }
+    .btn.danger { 
+      background:#e53935; 
+      color:white; 
+    }
+    .btn.danger:hover { 
+      background:#c62828; 
+      box-shadow:0 0 12px var(--neon-blue); 
+    }
 
-    #searchBox { width:100%; padding:6px; border-radius:4px; margin-bottom:10px; border:1px solid var(--neon-blue); background:rgba(255,255,255,0.06); color:#fff; backdrop-filter: blur(8px); box-shadow:0 0 6px rgba(0,217,255,0.3); }
-    #searchBox:focus { box-shadow:0 0 10px var(--neon-blue); }
+    #searchBox { 
+      width:100%; 
+      padding:6px; 
+      border-radius:4px; 
+      margin-bottom:10px; 
+      border:1px solid var(--neon-blue); 
+      background:rgba(255,255,255,0.06); 
+      color:#fff; 
+      backdrop-filter: blur(8px); 
+      box-shadow:0 0 6px rgba(0,217,255,0.3); 
+    }
+    #searchBox:focus { 
+      box-shadow:0 0 10px var(--neon-blue); 
+      outline: none;
+    }
 
-    #insertBtn { margin-top:8px; padding:8px; border-radius:4px; border:1px solid var(--neon-blue); cursor:not-allowed; background:#888; color:#fff; font-weight:600; box-shadow:0 3px 12px rgba(0,0,0,0.4),0 0 8px var(--neon-blue); }
-    #insertBtn.active { cursor:pointer; background:#0ca678; box-shadow:0 0 12px var(--neon-blue); }
+    #insertBtn { 
+      margin-top:8px; 
+      padding:8px; 
+      border-radius:4px; 
+      border:1px solid var(--neon-blue); 
+      cursor:not-allowed; 
+      background:#888; 
+      color:#fff; 
+      font-weight:600; 
+      box-shadow:0 3px 12px rgba(0,0,0,0.4),0 0 8px var(--neon-blue); 
+    }
+    #insertBtn.active { 
+      cursor:pointer; 
+      background:#0ca678; 
+      box-shadow:0 0 12px var(--neon-blue); 
+    }
 
-    @keyframes rowHighlight { 0% { background-color: rgba(0,255,0,0.4); } 100% { background-color: transparent; } }
-    .highlight { animation: rowHighlight 1s ease-out; }
+    @keyframes rowHighlight { 
+      0% { background-color: rgba(0,255,0,0.4); } 
+      100% { background-color: transparent; } 
+    }
+    .highlight { 
+      animation: rowHighlight 1s ease-out; 
+    }
 
-    .pulse { animation: pulseBtn 1s infinite; }
-    @keyframes pulseBtn { 0% { transform: scale(1); box-shadow:0 0 8px var(--neon-blue); } 50% { transform: scale(1.05); box-shadow:0 0 16px var(--neon-blue); } 100% { transform: scale(1); box-shadow:0 0 8px var(--neon-blue); } }
+    .pulse { 
+      animation: pulseBtn 1s infinite; 
+    }
+    @keyframes pulseBtn { 
+      0% { transform: scale(1); box-shadow:0 0 8px var(--neon-blue); } 
+      50% { transform: scale(1.05); box-shadow:0 0 16px var(--neon-blue); } 
+      100% { transform: scale(1); box-shadow:0 0 8px var(--neon-blue); } 
+    }
 
-    .save-status { margin-left:12px; font-weight:700; color: var(--neon-blue); vertical-align: middle; }
+    .save-status { 
+      margin-left:12px; 
+      font-weight:700; 
+      color: var(--neon-blue); 
+      vertical-align: middle; 
+    }
+    
+    .clearfix::after {
+      content: "";
+      clear: both;
+      display: table;
+    }
+    
+    @media (max-width: 768px) {
+      .form-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+      
+      .schemes, .sheet-table-container {
+        max-height: 200px;
+      }
+      
+      table {
+        font-size: 10px;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      main {
+        padding: 10px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -72,10 +297,13 @@
     <form id="nitForm">
       <div class="form-grid">
         <div class="field"><label>Financial Year</label><input type="text" name="fyear"/></div>
-        <div class="field"><label>Memo No</label><input type="text" name="memo"/></div>
-        <div class="field"><label>Memo Date</label><input type="date" name="memodate"/></div>
-        <div class="field"><label>NIT No</label><input type="text" name="nit"/></div>
-        <div class="field"><label>NIT Date</label><input type="date" name="date"/></div>
+        <div class="field memo"><label>Memo No</label><input type="text" name="memo"/></div>
+        <div class="field memodate"><label>Memo Date</label><input type="date" name="memodate"/></div>
+        <div class="field nit"><label>NIT No</label><input type="text" name="nit"/></div>
+        <div class="field date"><label>NIT Date</label><input type="date" name="date"/></div>
+        <div class="field"><label>Time Allowed</label><input type="text" name="timeAllowed"/></div> 
+        <div class="field lastDate"><label>Form Submission Last Date</label><input type="datetime-local" name="lastDate"/></div>
+        <div class="field pubDate"><label>Publication Date</label><input type="datetime-local" name="pubDate"/></div>
       </div>
 
       <h3>Select Work from Action Plan</h3>
@@ -96,7 +324,7 @@
       </div>
       <button id="insertBtn" type="button">Insert</button>
 
-      <div id="schemeCount">Scheme Count: 0</div>
+      <div id="schemeCount" class="clearfix">Scheme Count: 0</div>
 
       <div class="schemes">
         <table>
