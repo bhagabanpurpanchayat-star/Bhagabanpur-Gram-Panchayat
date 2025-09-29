@@ -355,7 +355,7 @@
 <audio id="successSound" preload="auto" src="https://assets.mixkit.co/sfx/preview/mixkit-correct-answer-tone-2870.mp3"></audio>
 
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycbxU0xeUMtIJ48gKFMCSe6EjAjjdP43S0FyIxTRhoWZmDnKksJOY35ArJNdmpiI5s6zFtQ/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbwnxMyaBiNFenPPZJnwb8KxEAl7-K8GCoLyyEleAQy8HiOHv5QgOOrBElv3vJ6aUnDpqQ/exec";
 
 const sheetDataBody = document.getElementById("sheetData");
 const schemesBody = document.getElementById("schemesBody");
@@ -538,6 +538,13 @@ document.getElementById("nitForm").addEventListener("submit", async function(e) 
       params.append("memodate", fd.get("memodate")||"");
       params.append("nit", fd.get("nit")||"");
       params.append("date", fd.get("date")||"");
+
+      // <-- ADDED: include the three new fields so server receives them -->
+      params.append("timeAllowed", fd.get("timeAllowed")||"");
+      params.append("lastDate", fd.get("lastDate")||"");
+      params.append("pubDate", fd.get("pubDate")||"");
+      // <-- end added lines -->
+
       params.append("actid[]", actids[i]||"");
       params.append("work[]", works[i]||"");
       params.append("site[]", sites[i]||"");
