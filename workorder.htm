@@ -4,16 +4,7 @@
   <meta charset="UTF-8" />
   <title>Work Order Module</title>
   <style>
-    html, body {
-      height: 100%;
-      margin: 0;
-      padding: 0;
-      font-family: Arial, sans-serif;
-      background: #2b2b2b;
-      color: #eee;
-      font-size: 12px;
-    }
-
+    html, body { height: 100%; margin: 0; padding: 0; font-family: Arial, sans-serif; background: #2b2b2b; color: #eee; font-size: 12px; }
     body { display: flex; flex-direction: column; }
     h2 { color: #fff; font-size: 16px; margin: 10px; text-align: center; }
 
@@ -56,6 +47,7 @@
 
     td input { width: 100%; box-sizing: border-box; font-size: 12px; padding: 2px; text-align: center; }
     td input[type="date"] { padding: 2px; }
+    td input[readonly] { background-color: #555; color: #ccc; border: none; cursor: default; }
   </style>
 </head>
 <body>
@@ -90,10 +82,9 @@
   </div>
 
   <script>
-    const scriptURL = "https://script.google.com/macros/s/AKfycbzLK7FVW2FBBoQA6F5GMtSv5cn0BwElF8ZYrJkCDDD97y-ndnGtNEK8UnCF8uYh5J1vjQ/exec";
+    const scriptURL = "https://script.google.com/macros/s/AKfycbzLK7FVW2FBBoQA6F5GMtSv5cn0BwElF8ZYrJkCDDD97y-ndnGtNEK8UnCF8uYh5J1vjQ/exec"; // Replace with your Apps Script URL
     let tableData = [];
     const widthClasses = ["col-timestamp","col-unique","col-nit","col-sl","col-nitdate","col-vendor","col-work","col-source","col-wo-no","col-wo-date","col-estimate"];
-    const paddingClasses = ["","","","","","","","","","",""];
 
     async function refreshData() {
       const btn = document.getElementById("refreshBtn");
@@ -122,12 +113,12 @@
 
         for(let j=0;j<=10;j++){
           let td = document.createElement("td");
-          td.className = `${widthClasses[j]} ${paddingClasses[j]}`;
+          td.className = widthClasses[j];
 
-          if(j===8){ 
+          if(j===8){ // WORK ORDER NO -> editable
             td.innerHTML = `<input type="text" value="${row[j]||''}" id="col_${i}_${j}" oninput="toggleButton(${i})">`;
           }
-          else if(j===9){
+          else if(j===9){ // WORK ORDER DATE -> editable
             let dateVal = "";
             if(row[j]){
               const d = new Date(row[j]);
@@ -135,8 +126,9 @@
             }
             td.innerHTML = `<input type="date" value="${dateVal}" id="col_${i}_${j}" oninput="toggleButton(${i})">`;
           }
-          else if(j===10){
-            td.innerHTML = `<input type="text" value="${row[j]||''}" id="col_${i}_${j}" oninput="toggleButton(${i})">`;
+          else if(j===7 || j===10){ 
+            // Source of Fund & Estimate Value -> readonly
+            td.innerHTML = `<input type="text" value="${row[j]||''}" readonly>`;
           }
           else td.textContent = row[j] ?? "";
 
@@ -158,8 +150,6 @@
       const filtered = tableData.filter(row =>
         (row[1] && row[1].toString().toLowerCase().includes(search)) ||
         (row[2] && row[2].toString().toLowerCase().includes(search)) ||
-        (row[3] && row[3].toString().toLowerCase().includes(search)) ||
-        (row[4] && row[4].toString().toLowerCase().includes(search)) ||
         (row[5] && row[5].toString().toLowerCase().includes(search)) ||
         (row[6] && row[6].toString().toLowerCase().includes(search))
       );
@@ -184,11 +174,13 @@
       btn.disabled=true; btn.textContent="Saving...";
 
       try{
+        const rowData = tableData[i];
         const formData=new FormData();
         formData.append("action","updateBillPayment");
-        formData.append("rowIndex",i);
+        formData.append("uniqueNIT", rowData[1]);
+        formData.append("vendor", rowData[5]);
 
-        for(let j of [8,9,10]){
+        for(let j of [8,9]){ // Only WORK ORDER fields
           const inputEl=document.getElementById(`col_${i}_${j}`);
           if(inputEl) formData.append(`col${j}`,inputEl.value);
         }
