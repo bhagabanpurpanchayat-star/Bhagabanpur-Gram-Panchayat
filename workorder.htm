@@ -64,6 +64,7 @@
     .btn-primary{background:#28a745;color:#fff;border:none;border-radius:4px;padding:6px 10px;cursor:pointer}
     .btn-secondary{background:#555;color:#fff;border:none;border-radius:4px;padding:6px 10px;cursor:pointer}
     .small-muted{font-size:12px;color:#bbb;margin-bottom:8px}
+    .tick-cell{color:#28a745;font-size:16px;font-weight:bold}
   </style>
 </head>
 <body>
@@ -112,8 +113,10 @@
         <thead>
           <tr>
             <th>Unique NIT</th>
+            <th>Vendor</th>
             <th>Work Order NO</th>
             <th>Date</th>
+            <th>Status</th>
           </tr>
         </thead>
         <tbody></tbody>
@@ -212,9 +215,6 @@ async function updateRow(i){
     if(result.success){
       btn.textContent="Saved ✔"; btn.style.background="green";
       showMessage(`Row ${result.row} updated successfully ✅`,"success");
-      const rowEl=document.querySelector(`#btn_${i}`).closest("tr");
-      rowEl.style.backgroundColor="#d4edda";
-      setTimeout(()=>{rowEl.style.backgroundColor=""; toggleButton(i);},1500);
     } else {
       btn.textContent="Failed ✖"; btn.style.background="red";
       showMessage("Update failed: "+(result.error||"Unknown"),"error");
@@ -235,7 +235,7 @@ function openNitModal(nit){
   tbody.innerHTML="";
   const group=tableData.filter(r=>r[2]==nit);
   const blanks=group.filter(r=>!r[8]);
-  if(blanks.length===0){ tbody.innerHTML=`<tr><td colspan="3">All rows already filled</td></tr>`; modal.classList.add("show"); return; }
+  if(blanks.length===0){ tbody.innerHTML=`<tr><td colspan="5">All rows already filled</td></tr>`; modal.classList.add("show"); return; }
 
   const fy=getFinancialYear();
   let start=1;
@@ -247,14 +247,17 @@ function openNitModal(nit){
   modalRows=[];
   blanks.forEach((r,idx)=>{
     const uniq=r[1];
+    const vendor=r[5];
     const orderNo=(start+idx)+"/BGP/"+fy;
     const date=today();
     const tr=document.createElement("tr");
     tr.innerHTML=`<td>${uniq}</td>
+      <td>${vendor}</td>
       <td><input type="text" value="${orderNo}" onchange="modalSet(${idx},'woNo',this.value)"></td>
-      <td><input type="date" value="${date}" onchange="modalSet(${idx},'woDate',this.value)"></td>`;
+      <td><input type="date" value="${date}" onchange="modalSet(${idx},'woDate',this.value)"></td>
+      <td class="status"></td>`;
     tbody.appendChild(tr);
-    modalRows.push({tableIndex:tableData.indexOf(r),woNo:orderNo,woDate:date,uniqueNIT:uniq});
+    modalRows.push({tableIndex:tableData.indexOf(r),woNo:orderNo,woDate:date,uniqueNIT:uniq,vendor:vendor});
   });
   modal.classList.add("show");
 }
@@ -275,7 +278,7 @@ async function saveModalAll(){
       const formData=new FormData();
       formData.append("action","updateBillPayment");
       formData.append("uniqueNIT", row.uniqueNIT);
-      formData.append("vendor", tableData[row.tableIndex][5]);
+      formData.append("vendor", row.vendor);
       formData.append("col8", row.woNo);
       formData.append("col9", row.woDate);
 
@@ -285,15 +288,16 @@ async function saveModalAll(){
         successCount++;
         tableData[row.tableIndex][8]=row.woNo;
         tableData[row.tableIndex][9]=row.woDate;
-        const rowEl=document.querySelector(`#dataTable tbody tr:nth-child(${row.tableIndex+1})`);
-        if(rowEl) rowEl.style.backgroundColor="#d4edda";
-        await new Promise(r=>setTimeout(r,150));
-      } else { console.error("Failed row:",row,result.error); }
+        const modalRow=document.querySelector(`#modalTable tbody tr:nth-child(${i+1}) td.status`);
+        if(modalRow) modalRow.innerHTML="✅"; // Tick mark
+        const mainRow=document.querySelector(`#dataTable tbody tr:nth-child(${row.tableIndex+1})`);
+        if(mainRow) mainRow.style.backgroundColor="#d4edda";
+      }
     } catch(err){ console.error("Network error:",err); }
   }
   btn.innerHTML=`Saved ${successCount}/${modalRows.length} ✅`;
   showMessage(`Saved ${successCount} out of ${modalRows.length} rows`,"success");
-  setTimeout(()=>{ btn.disabled=false; btn.innerHTML="Save All"; closeModal(); renderTable(tableData); },1500);
+  setTimeout(()=>{ btn.disabled=false; btn.innerHTML="Save All"; closeModal(); renderTable(tableData); },2000);
 }
 
 function filterTable(){
@@ -302,7 +306,9 @@ function filterTable(){
     (row[1] && row[1].toString().toLowerCase().includes(search)) ||
     (row[2] && row[2].toString().toLowerCase().includes(search)) ||
     (row[5] && row[5].toString().toLowerCase().includes(search)) ||
-    (row[6] && row[6].toString().toLowerCase().includes(search))
+    (row[6] && row[6].toString().toLowerCase().includes(search)) ||
+    (row[7] && row[7].toString().toLowerCase().includes(search)) ||
+    (row[8] && row[8].toString().toLowerCase().includes(search))
   );
   renderTable(filtered);
 }
